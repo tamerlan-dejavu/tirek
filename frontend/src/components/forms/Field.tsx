@@ -16,7 +16,7 @@ export function Field({
       <span className="label-tech">{label}</span>
       <input
         id={id}
-        className="mt-1.5 block h-11 w-full rounded-md border border-line-strong bg-surface px-3 text-[15px] transition-colors placeholder:text-faint focus:border-teal focus:ring-3 focus:ring-teal/15 focus:outline-none aria-[invalid=true]:border-critical"
+        className="mt-1.5 block h-11 w-full rounded-md border border-line-strong bg-surface px-3 text-[15px] transition-colors placeholder:text-faint focus:border-accent focus:ring-3 focus:ring-accent/15 focus:outline-none aria-[invalid=true]:border-critical"
         aria-invalid={!!error}
         aria-describedby={error ? `${id}-error` : undefined}
         {...input}
