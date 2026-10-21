@@ -1,5 +1,6 @@
 "use client";
 
+import { Check, Clock, X } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/Button";
@@ -8,36 +9,42 @@ import { useAction } from "@/lib/api/hooks";
 import type { WorkOrder } from "@/lib/api/types";
 
 /**
- * Management decision by ОСИ (ТЗ 5.8, 5.10): agree / reject / postpone with a reason.
+ * Management decision by ОСИ (ТЗ 5.8, 5.10): agree / postpone / reject with a reason.
  * Technical approval ≠ financial or legal authorisation of the works.
  */
 export function WorkOrderDecision({ workOrder }: { workOrder: WorkOrder }) {
   const [reason, setReason] = useState("");
-  const transition = useAction<{ status: string; reason: string }>(
-    `work-orders/${workOrder.id}/transition/`,
-    [[`work-orders/?building=${workOrder.building}`]],
-  );
+  const transition = useAction<{ status: string; reason: string }>(`work-orders/${workOrder.id}/transition/`, [
+    [`work-orders/?building=${workOrder.building}`],
+  ]);
   if (!["proposed", "postponed"].includes(workOrder.status)) return null;
 
   return (
-    <div className="mt-2 space-y-2">
+    <div className="mt-3 rounded-md border border-teal/40 bg-teal-soft/40 p-3">
+      <div className="label-tech mb-2 !text-teal-strong">Требуется решение ОСИ</div>
       <input
         value={reason}
         onChange={(e) => setReason(e.target.value)}
-        placeholder="Причина (обязательна при отклонении или переносе)"
-        aria-label="Причина"
-        className="min-h-9 w-full rounded-sm border border-line px-2 text-sm"
+        placeholder="Причина — обязательна при переносе или отклонении"
+        aria-label="Причина решения"
+        className="h-9 w-full rounded-md border border-line bg-surface px-2.5 text-sm focus:border-teal focus:outline-none"
       />
-      <div className="flex flex-wrap gap-2">
-        <Button onClick={() => transition.mutate({ status: "agreed", reason })}>Согласовать</Button>
-        <Button variant="secondary" disabled={!reason.trim()} onClick={() => transition.mutate({ status: "postponed", reason })}>
+      <div className="mt-2 flex flex-wrap gap-2">
+        <Button size="sm" icon={<Check className="size-3.5" />} onClick={() => transition.mutate({ status: "agreed", reason })}>
+          Согласовать
+        </Button>
+        <Button size="sm" variant="secondary" icon={<Clock className="size-3.5" />} disabled={!reason.trim()} onClick={() => transition.mutate({ status: "postponed", reason })}>
           Отложить
         </Button>
-        <Button variant="danger" disabled={!reason.trim()} onClick={() => transition.mutate({ status: "rejected", reason })}>
+        <Button size="sm" variant="danger" icon={<X className="size-3.5" />} disabled={!reason.trim()} onClick={() => transition.mutate({ status: "rejected", reason })}>
           Отклонить
         </Button>
       </div>
-      {transition.error ? <ErrorState error={transition.error} /> : null}
+      {transition.error ? (
+        <div className="mt-2">
+          <ErrorState error={transition.error} />
+        </div>
+      ) : null}
     </div>
   );
 }
