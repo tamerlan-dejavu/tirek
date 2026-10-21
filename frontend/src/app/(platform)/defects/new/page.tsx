@@ -66,7 +66,7 @@ function NewDefectForm() {
               <option value="">не указана</option>
               {["R1", "R2", "R3", "R4"].map((r) => <option key={r}>{r}</option>)}
             </select>
-            <span className="mt-1 block text-xs text-ink-muted">
+            <span className="mt-1 block text-xs text-muted">
               Это не утверждённая оценка — категорию риска подтверждает проверяющий инженер.
             </span>
           </label>
