@@ -32,7 +32,14 @@ CUSTOMER_VISIBLE = [
 
 
 class DefectViewSet(BuildingScopedViewSet):
-    queryset = Defect.objects.select_related("building", "element", "current_risk")
+    queryset = Defect.objects.select_related(
+        "building",
+        "element__element_type",
+        "element__parent",
+        "current_risk",
+        "inspection",
+        "created_by",
+    )
     serializer_class = DefectSerializer
     filterset_class = DefectFilter
     search_fields = ["number", "building__address", "description", "defect_type", "location"]

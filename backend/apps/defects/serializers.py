@@ -7,6 +7,13 @@ class DefectSerializer(serializers.ModelSerializer):
     building_address = serializers.CharField(source="building.address", read_only=True)
     element_path = serializers.ListField(source="element.path", read_only=True)
     approved_risk = serializers.CharField(read_only=True, allow_null=True)
+    # Used by the schematic building view and analytics to place / group the defect
+    element_type = serializers.CharField(source="element.element_type_id", read_only=True)
+    element_group = serializers.CharField(source="element.element_type.group", read_only=True)
+    inspection_number = serializers.CharField(
+        source="inspection.number", read_only=True, default=None
+    )
+    author_name = serializers.CharField(source="created_by.__str__", read_only=True, default=None)
 
     class Meta:
         model = Defect
@@ -17,6 +24,10 @@ class DefectSerializer(serializers.ModelSerializer):
             "building_address",
             "element",
             "element_path",
+            "element_type",
+            "element_group",
+            "inspection_number",
+            "author_name",
             "location",
             "inspection",
             "answer",
