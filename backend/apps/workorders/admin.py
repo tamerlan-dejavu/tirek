@@ -1,0 +1,21 @@
+from django.contrib import admin
+
+from .models import WorkOrder, WorkOrderComment, WorkOrderEvent
+
+
+class EventInline(admin.TabularInline):
+    model = WorkOrderEvent
+    extra = 0
+    can_delete = False
+    readonly_fields = ["from_status", "to_status", "actor", "reason", "created_at"]
+
+
+@admin.register(WorkOrder)
+class WorkOrderAdmin(admin.ModelAdmin):
+    list_display = ["number", "title", "building", "priority", "status", "planned_date"]
+    list_filter = ["status", "priority"]
+    search_fields = ["number", "title"]
+    inlines = [EventInline]
+
+
+admin.site.register(WorkOrderComment)
