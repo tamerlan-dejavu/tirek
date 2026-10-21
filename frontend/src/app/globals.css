@@ -1,76 +1,84 @@
 @import "tailwindcss";
 
 /*
- * TIREK DESIGN TOKENS — "Architectural Intelligence / Precision Engineering"
- * Spec: docs/design-system.md. Every color pair used for text meets WCAG AA (4.5:1).
- * Base hues come from the brand brief; "-ink" variants are darkened for text on light surfaces.
+ * TIREK DESIGN TOKENS — Premium SaaS Minimalism (graphite).
+ * Single source of truth for color, type, radius and motion. Spec: docs/design-system.md.
+ * Contrast is measured against --color-canvas (#0C0D10) and --color-surface (#16181D).
  */
 @theme {
   /* Typography */
+  --font-display: "Manrope Variable", "Manrope", "Inter Variable", system-ui, sans-serif;
   --font-sans: "Inter Variable", "Inter", "Segoe UI", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", "JetBrains Mono", ui-monospace, monospace;
 
-  /* Brand */
-  --color-navy: #101d2c; /* deep architectural navy — navigation, public surfaces */
-  --color-navy-2: #16273a; /* raised navy */
-  --color-steel: #213d51; /* structural steel blue — secondary dark surfaces */
-  --color-steel-2: #2c4f68;
-  --color-teal: #20a6a6; /* engineering teal — accents, focus, markers (not for text on light) */
-  --color-teal-strong: #147a7a; /* teal for text and filled buttons on light (5.1:1) */
-  --color-teal-soft: #e3f3f3;
+  /* Surfaces */
+  --color-base: #0c0d10; /* page background, navigation */
+  --color-base-2: #111317; /* subtly raised band */
+  --color-canvas: #0c0d10; /* working background */
+  --color-surface: #16181d; /* cards, panels */
+  --color-mist: #1d2026; /* secondary surfaces, hover, tracks */
+  --color-line: #292c33; /* 1px borders and dividers */
+  --color-line-strong: #3a3e47; /* input borders, emphasized dividers */
 
-  /* Neutrals */
-  --color-canvas: #f8fafb; /* working background */
-  --color-surface: #ffffff;
-  --color-mist: #e9eef1; /* secondary surfaces, separators */
-  --color-line: #dbe2e7; /* hairlines */
-  --color-line-strong: #c3ced6;
-  --color-ink: #192d3d; /* primary text */
-  --color-muted: #647682; /* metadata (4.7:1 on white) */
-  --color-faint: #8a99a4; /* decorative only, never body text */
+  /* Text */
+  --color-ink: #f5f5f7; /* primary */
+  --color-muted: #969ba6; /* secondary (7.0:1 on canvas) */
+  --color-faint: #6b7280; /* tertiary, technical captions (4.1:1 — only ≥ 11px labels/decorative) */
 
-  /* Semantic — base for fills/markers, -ink for text */
-  --color-critical: #b94e4e;
-  --color-critical-ink: #a23d3d;
-  --color-critical-soft: #f8eaea;
-  --color-warning: #c58b35;
-  --color-warning-ink: #8a5f1f;
-  --color-warning-soft: #f8f0e3;
-  --color-healthy: #27866e;
-  --color-healthy-ink: #1f6c59;
-  --color-healthy-soft: #e5f2ee;
-  --color-info: #258d96;
-  --color-info-ink: #1c6f77;
-  --color-info-soft: #e4f2f3;
-  --color-unknown: #7c8893;
-  --color-unknown-ink: #5b6772;
-  --color-unknown-soft: #eef1f3;
+  /* Accent */
+  --color-accent: #3b82f6;
+  --color-accent-strong: #3b82f6; /* links and filled buttons */
+  --color-accent-hover: #2563eb;
+  --color-accent-soft: rgb(59 130 246 / 0.12);
 
-  /* Risk scale R1–R4 (expert category, independent from workflow status) */
-  --color-r1: #b94e4e;
-  --color-r2: #c58b35;
-  --color-r3: #4f7690;
-  --color-r4: #7c8893;
+  /* Neutral line colors for drawings and charts */
+  --color-steel: #8b93a1;
+  --color-steel-2: #4b5260;
 
-  /* Geometry — engineered, not soft */
-  --radius-xs: 2px;
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
-  --radius-xl: 12px;
+  /* Semantic — base for fills and markers, -ink for text on dark, -soft for tinted backgrounds */
+  --color-critical: #ef4444;
+  --color-critical-ink: #f87171;
+  --color-critical-soft: rgb(239 68 68 / 0.12);
+  --color-warning: #f59e0b;
+  --color-warning-ink: #fbbf24;
+  --color-warning-soft: rgb(245 158 11 / 0.12);
+  --color-healthy: #10b981;
+  --color-healthy-ink: #34d399;
+  --color-healthy-soft: rgb(16 185 129 / 0.12);
+  --color-info: #38bdf8;
+  --color-info-ink: #7dd3fc;
+  --color-info-soft: rgb(56 189 248 / 0.12);
+  --color-unknown: #94a3b8;
+  --color-unknown-ink: #cbd5e1;
+  --color-unknown-soft: rgb(148 163 184 / 0.12);
 
-  --shadow-hairline: 0 1px 0 rgb(16 29 44 / 0.04);
-  --shadow-panel: 0 1px 2px rgb(16 29 44 / 0.05), 0 0 0 1px rgb(16 29 44 / 0.02);
-  --shadow-overlay: 0 12px 32px -8px rgb(16 29 44 / 0.24);
+  /* Engineering risk scale R1–R4 — used only for meaning, never as decoration */
+  --color-r1: #ef4444;
+  --color-r2: #f59e0b;
+  --color-r3: #38bdf8;
+  --color-r4: #94a3b8;
 
-  /* Motion */
+  /* Geometry */
+  --radius-xs: 4px;
+  --radius-sm: 6px; /* small elements, badges */
+  --radius-md: 8px; /* inputs, controls */
+  --radius-lg: 12px; /* cards */
+  --radius-xl: 16px; /* modals, large containers */
+  --radius-button: 10px;
+
+  /* Depth comes from surfaces and 1px borders, not shadows */
+  --shadow-hairline: none;
+  --shadow-panel: 0 0 0 1px var(--color-line);
+  --shadow-overlay: 0 16px 40px -12px rgb(0 0 0 / 0.6), 0 0 0 1px var(--color-line);
+
+  /* Motion — calm, 150–250 ms */
   --ease-precise: cubic-bezier(0.2, 0, 0, 1);
   --duration-fast: 150ms;
-  --duration-base: 220ms;
-  --duration-slow: 320ms;
+  --duration-base: 200ms;
+  --duration-slow: 250ms;
 
   --animate-draw: draw 2.4s var(--ease-precise) forwards;
-  --animate-fade-up: fade-up 600ms var(--ease-precise) both;
+  --animate-fade-up: fade-up 250ms var(--ease-precise) both;
 
   @keyframes draw {
     from {
@@ -83,7 +91,7 @@
   @keyframes fade-up {
     from {
       opacity: 0;
-      transform: translateY(6px);
+      transform: translateY(4px);
     }
     to {
       opacity: 1;
@@ -94,79 +102,74 @@
 
 @layer base {
   html {
-    color-scheme: light;
+    color-scheme: dark;
     -webkit-text-size-adjust: 100%;
   }
   body {
     background: var(--color-canvas);
     color: var(--color-ink);
     font-family: var(--font-sans);
-    font-feature-settings: "cv11", "ss01"; /* Inter: straight-sided digits, open forms */
+    font-feature-settings: "cv11", "ss01";
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: clip;
+  }
+  /* Headings use the display face; body copy, navigation and forms stay on Inter */
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
   }
   :focus-visible {
-    outline: 2px solid var(--color-teal);
+    outline: 2px solid var(--color-accent);
     outline-offset: 2px;
     border-radius: var(--radius-xs);
   }
   ::selection {
-    background: rgb(32 166 166 / 0.22);
+    background: rgb(59 130 246 / 0.32);
+  }
+  input,
+  textarea,
+  select {
+    color-scheme: dark;
+  }
+  ::placeholder {
+    color: var(--color-faint);
   }
 }
 
-/* Numbers in metrics and tables line up */
 @utility tabular {
   font-variant-numeric: tabular-nums;
 }
 
-/* Uppercase technical label: "INSPECTION ID", "02 / ДЕФЕКТЫ" */
+/* Technical label: IDs, categories, engineering captions */
 @utility label-tech {
   font-family: var(--font-mono);
   font-size: 0.6875rem;
   line-height: 1rem;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--color-muted);
 }
 
-/* Fine construction grid — used sparingly behind schematics and the public site */
+/* Construction grid — nearly invisible; kept only where it supports drawings */
 @utility grid-blueprint {
   background-image:
-    linear-gradient(to right, rgb(32 166 166 / 0.07) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(32 166 166 / 0.07) 1px, transparent 1px);
-  background-size: 24px 24px;
+    linear-gradient(to right, rgb(255 255 255 / 0.025) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.025) 1px, transparent 1px);
+  background-size: 32px 32px;
 }
 @utility grid-blueprint-light {
   background-image:
-    linear-gradient(to right, rgb(25 45 61 / 0.045) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(25 45 61 / 0.045) 1px, transparent 1px);
+    linear-gradient(to right, rgb(255 255 255 / 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.02) 1px, transparent 1px);
   background-size: 24px 24px;
 }
 
-/* Registration marks on panel corners — the drawing-sheet signature of the system */
+/* Former drawing-sheet corner marks — retired in the minimal theme (kept as a no-op hook) */
 @utility registration {
   position: relative;
-  &::before,
-  &::after {
-    content: "";
-    position: absolute;
-    width: 7px;
-    height: 7px;
-    pointer-events: none;
-    border-color: var(--color-line-strong);
-  }
-  &::before {
-    top: -1px;
-    left: -1px;
-    border-top: 1px solid;
-    border-left: 1px solid;
-  }
-  &::after {
-    bottom: -1px;
-    right: -1px;
-    border-bottom: 1px solid;
-    border-right: 1px solid;
-  }
 }
 
 .draw-path {
