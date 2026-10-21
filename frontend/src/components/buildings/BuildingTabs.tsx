@@ -31,10 +31,10 @@ export function BuildingTabs({ id }: { id: string }) {
             aria-current={active ? "page" : undefined}
             className={clsx(
               "flex items-center gap-2 border-b-2 px-2.5 py-3 text-[13.5px] whitespace-nowrap transition-colors",
-              active ? "border-teal font-medium text-ink" : "border-transparent text-muted hover:text-ink",
+              active ? "border-accent font-medium text-ink" : "border-transparent text-muted hover:text-ink",
             )}
           >
-            <span className={clsx("font-mono text-[10px]", active ? "text-teal-strong" : "text-faint")}>{String(i + 1).padStart(2, "0")}</span>
+            <span className={clsx("font-mono text-[10px]", active ? "text-accent-strong" : "text-faint")}>{String(i + 1).padStart(2, "0")}</span>
             {t.label}
           </Link>
         );

@@ -166,7 +166,7 @@ export function BuildingElevation({
             d={`M${x0 - 6} ${bodyTop}H${x1 + 6}M${x0} ${bodyTop}V${top + 6}H${x1}V${bodyTop}`}
             fill="none"
             stroke="var(--color-steel)"
-            strokeWidth="1.4"
+            strokeWidth="1.1"
             className={drawCls}
             style={{ ["--len" as string]: 2 * (x1 - x0) + 80 }}
           />
@@ -178,7 +178,7 @@ export function BuildingElevation({
             height={bodyH}
             fill="var(--color-surface)"
             stroke="var(--color-steel)"
-            strokeWidth="1.4"
+            strokeWidth="1.1"
             className={drawCls}
             style={{ ["--len" as string]: 2 * (x1 - x0 + bodyH) }}
           />
@@ -208,7 +208,7 @@ export function BuildingElevation({
             return (
               <g key={`e${e}`}>
                 {e > 0 && (
-                  <path d={`M${x0 + e * colW} ${top - 8}V${groundY + baseH + 4}`} stroke="var(--color-teal)" strokeOpacity="0.45" strokeWidth="0.8" strokeDasharray="5 3 1 3" />
+                  <path d={`M${x0 + e * colW} ${top - 8}V${groundY + baseH + 4}`} stroke="var(--color-steel-2)" strokeWidth="0.8" strokeDasharray="5 3 1 3" />
                 )}
                 <rect x={cx - 7} y={groundY - floorH * 0.8} width="14" height={floorH * 0.8} fill="var(--color-mist)" stroke="var(--color-steel)" strokeWidth="0.8" />
                 <circle cx={cx} cy={H - 16} r="8" fill="var(--color-surface)" stroke="var(--color-steel)" strokeWidth="0.8" />
@@ -241,7 +241,7 @@ export function BuildingElevation({
           </text>
 
           {/* engineering systems strip */}
-          <rect x={x0} y={sysTop} width={x1 - x0} height={sysH} rx="3" fill="var(--color-mist)" fillOpacity="0.6" stroke="var(--color-line-strong)" strokeWidth="0.8" />
+          <rect x={x0} y={sysTop} width={x1 - x0} height={sysH} rx="3" fill="var(--color-mist)" fillOpacity="0.5" stroke="var(--color-line)" strokeWidth="0.8" />
           <text x={x0 + 8} y={sysTop + 11} fontSize="8" fontFamily="var(--font-mono)" fill="var(--color-muted)" letterSpacing="0.08em">
             ИНЖЕНЕРНЫЕ СИСТЕМЫ · БЕЗ ПРИВЯЗКИ К ФАСАДУ
           </text>
@@ -274,13 +274,13 @@ export function BuildingElevation({
                 onClick={() => setActive(p.defect.id)}
                 className="cursor-pointer outline-none"
               >
-                {isActive && <circle cx={p.x} cy={p.y} r="15" fill="none" stroke="var(--color-teal)" strokeWidth="1.5" />}
+                {isActive && <circle cx={p.x} cy={p.y} r="15" fill="none" stroke="var(--color-accent)" strokeWidth="1.5" />}
                 <circle
                   cx={p.x}
                   cy={p.y}
                   r="9.5"
                   fill={prelim ? "var(--color-surface)" : RISK_FILL[risk]}
-                  stroke={prelim ? "var(--color-unknown)" : "var(--color-surface)"}
+                  stroke={prelim ? "var(--color-unknown)" : "var(--color-canvas)"}
                   strokeWidth={prelim ? 1.4 : 1.5}
                   strokeDasharray={prelim ? "2.5 2" : undefined}
                 />
@@ -291,7 +291,7 @@ export function BuildingElevation({
                   fontSize="9"
                   fontWeight="600"
                   fontFamily="var(--font-mono)"
-                  fill={prelim ? "var(--color-ink)" : "#fff"}
+                  fill={prelim ? "var(--color-ink)" : "var(--color-base)"}
                 >
                   {p.n}
                 </text>
@@ -301,7 +301,7 @@ export function BuildingElevation({
 
           {/* title block — like a drawing sheet stamp */}
           <g fontFamily="var(--font-mono)" fontSize="8" fill="var(--color-muted)">
-            <rect x={W - 168} y={6} width={160} height={24} fill="var(--color-surface)" stroke="var(--color-line-strong)" strokeWidth="0.8" />
+            <rect x={W - 168} y={6} width={160} height={24} fill="var(--color-canvas)" stroke="var(--color-line)" strokeWidth="0.8" />
             <text x={W - 162} y={16} letterSpacing="0.06em">СХЕМА · НЕ В МАСШТАБЕ</text>
             <text x={W - 162} y={26} fill="var(--color-faint)">расположение по зонам</text>
           </g>
@@ -340,8 +340,8 @@ export function BuildingElevation({
                 onMouseEnter={() => setActive(p.defect.id)}
                 onFocus={() => setActive(p.defect.id)}
                 className={clsx(
-                  "flex items-center gap-3 px-3 py-2 text-sm transition-colors hover:bg-teal-soft/40",
-                  active === p.defect.id && "bg-teal-soft/40",
+                  "flex items-center gap-3 px-3 py-2 text-sm transition-colors hover:bg-accent-soft/40",
+                  active === p.defect.id && "bg-accent-soft/40",
                 )}
               >
                 <span className="grid size-5 shrink-0 place-items-center rounded-full border border-line-strong font-mono text-[10px]">

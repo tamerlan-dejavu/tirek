@@ -5,25 +5,29 @@ import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ReactNode } from "reac
 type Variant = "primary" | "secondary" | "ghost" | "danger" | "inverse" | "inverse-outline";
 type Size = "sm" | "md" | "lg";
 
+const PRIMARY = "bg-accent-strong text-white hover:bg-accent-hover";
+const SECONDARY = "border border-line bg-transparent text-ink hover:border-line-strong hover:bg-mist";
+
 const VARIANTS: Record<Variant, string> = {
-  primary: "bg-teal-strong text-white hover:bg-[#106969] active:bg-[#0d5a5a]",
-  secondary: "border border-line-strong bg-surface text-ink hover:border-steel-2 hover:bg-canvas",
+  primary: PRIMARY,
+  secondary: SECONDARY,
   ghost: "text-muted hover:bg-mist hover:text-ink",
-  danger: "border border-critical/60 bg-surface text-critical-ink hover:bg-critical-soft",
-  inverse: "bg-teal text-navy hover:bg-[#2bb8b8]",
-  "inverse-outline": "border border-white/25 text-white hover:border-white/60 hover:bg-white/5",
+  danger: "border border-critical/40 bg-transparent text-critical-ink hover:bg-critical-soft",
+  // Public site variants share the same system on the graphite background
+  inverse: PRIMARY,
+  "inverse-outline": SECONDARY,
 };
 
 const SIZES: Record<Size, string> = {
-  sm: "h-8 px-2.5 text-[13px] gap-1.5",
-  md: "h-9 px-3.5 text-sm gap-2",
+  sm: "h-8 px-3 text-[13px] gap-1.5",
+  md: "h-10 px-4 text-sm gap-2",
   lg: "h-12 px-5 text-[15px] gap-2", // field use on phones: ≥ 44px target
 };
 
 export function buttonClass(variant: Variant = "primary", size: Size = "md", className?: string) {
   return clsx(
-    "inline-flex items-center justify-center rounded-md font-medium whitespace-nowrap select-none",
-    "transition-colors duration-[var(--duration-fast)] ease-[var(--ease-precise)]",
+    "inline-flex items-center justify-center rounded-[var(--radius-button)] font-medium whitespace-nowrap select-none",
+    "transition-colors duration-[var(--duration-base)] ease-[var(--ease-precise)]",
     "disabled:pointer-events-none disabled:opacity-45",
     VARIANTS[variant],
     SIZES[size],

@@ -66,7 +66,7 @@ export default function DashboardPage() {
           title="Требуют внимания"
           flush
           actions={
-            <Link href="/defects" className="text-[13px] text-teal-strong hover:underline">
+            <Link href="/defects" className="text-[13px] text-accent-strong hover:underline">
               Реестр дефектов
             </Link>
           }
@@ -90,19 +90,12 @@ export default function DashboardPage() {
                       <div className="min-w-[180px]">
                         <div className="text-ink">{r.defect_type}</div>
                         <div className="truncate text-xs text-muted">
-                          {r.building_address} · {r.location || r.element_path.join(" → ")}
+                          <span className="font-mono text-faint">{r.number}</span> · {r.building_address} · {r.location || r.element_path.join(" → ")}
                         </div>
                       </div>
                     ),
                   },
                   { key: "status", header: "Статус", render: (r) => <StatusBadge {...DEFECT_STATUS[r.status]} /> },
-                  {
-                    key: "n",
-                    header: "№",
-                    hideOnMobile: true,
-                    align: "right",
-                    render: (r) => <span className="font-mono text-xs text-muted">{r.number}</span>,
-                  },
                 ]}
               />
             )}
@@ -113,7 +106,7 @@ export default function DashboardPage() {
           index="03"
           title="Плановые работы"
           actions={
-            <Link href="/work-orders" className="text-[13px] text-teal-strong hover:underline">
+            <Link href="/work-orders" className="text-[13px] text-accent-strong hover:underline">
               План
             </Link>
           }

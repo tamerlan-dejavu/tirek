@@ -33,13 +33,13 @@ export function Table<T extends { id: string }>({
       <table className="w-full border-collapse text-sm">
         {caption && <caption className="sr-only">{caption}</caption>}
         <thead>
-          <tr className="border-b border-line bg-canvas/60">
+          <tr className="border-b border-line">
             {columns.map((c) => (
               <th
                 key={c.key}
                 scope="col"
                 className={clsx(
-                  "label-tech px-3 py-2 font-normal whitespace-nowrap first:pl-4 last:pr-4",
+                  "label-tech px-3 py-2.5 font-normal whitespace-nowrap first:pl-5 last:pr-5 md:first:pl-6 md:last:pr-6",
                   c.align === "right" ? "text-right" : "text-left",
                   c.hideOnMobile && "hidden md:table-cell",
                 )}
@@ -58,7 +58,7 @@ export function Table<T extends { id: string }>({
               onKeyDown={onRowClick ? (e) => e.key === "Enter" && onRowClick(row) : undefined}
               className={clsx(
                 "border-b border-line last:border-0",
-                onRowClick && "cursor-pointer transition-colors hover:bg-teal-soft/50 focus-visible:bg-teal-soft/60",
+                onRowClick && "cursor-pointer transition-colors duration-[var(--duration-fast)] hover:bg-mist/60 focus-visible:bg-mist",
                 rowClassName?.(row),
               )}
             >
@@ -66,7 +66,7 @@ export function Table<T extends { id: string }>({
                 <td
                   key={c.key}
                   className={clsx(
-                    "px-3 py-2.5 align-middle first:pl-4 last:pr-4 [&_.font-mono]:whitespace-nowrap",
+                    "px-3 py-3 align-middle first:pl-5 last:pr-5 md:first:pl-6 md:last:pr-6 [&_.font-mono]:whitespace-nowrap",
                     c.align === "right" && "text-right",
                     c.hideOnMobile && "hidden md:table-cell",
                     c.className,

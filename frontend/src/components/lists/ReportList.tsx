@@ -78,7 +78,7 @@ export function ReportList({ buildingId, audience = "provider" }: { buildingId?:
               align: "right",
               render: (r) =>
                 r.status === "ready" ? (
-                  <a className="inline-flex items-center gap-1 text-[13px] font-medium text-teal-strong hover:underline" href={`${API_BASE}/v1/reports/${r.id}/download/`}>
+                  <a className="inline-flex items-center gap-1 text-[13px] font-medium text-accent-strong hover:underline" href={`${API_BASE}/v1/reports/${r.id}/download/`}>
                     <Download aria-hidden className="size-3.5" /> PDF
                   </a>
                 ) : null,

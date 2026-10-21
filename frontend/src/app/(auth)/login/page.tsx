@@ -56,7 +56,7 @@ function LoginForm() {
         {pending ? "Проверка…" : "Войти"}
       </Button>
       <div className="flex items-center justify-between border-t border-line pt-4 text-sm">
-        <Link href="/reset-password" className="text-teal-strong hover:underline">
+        <Link href="/reset-password" className="text-accent-strong hover:underline">
           Забыли пароль?
         </Link>
         <Link href="/" className="text-muted hover:text-ink">

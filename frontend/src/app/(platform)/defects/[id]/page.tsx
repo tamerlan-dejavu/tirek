@@ -45,7 +45,7 @@ interface Risk {
 }
 
 const TREND = { worse: "ухудшение", same: "без изменений", better: "улучшение" } as const;
-const textarea = "min-h-20 w-full rounded-md border border-line bg-surface p-2.5 text-sm focus:border-teal focus:outline-none";
+const textarea = "min-h-20 w-full rounded-md border border-line bg-surface p-2.5 text-sm focus:border-accent focus:outline-none";
 
 export default function DefectPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -86,7 +86,7 @@ export default function DefectPage({ params }: { params: Promise<{ id: string }>
   return (
     <>
       {/* Header: identity, severity and status as separate dimensions */}
-      <header className="registration mb-6 rounded-lg border border-line bg-surface">
+      <header className="mb-6 rounded-lg border border-line bg-surface">
         <div className="flex flex-wrap items-start justify-between gap-4 px-5 pt-5 pb-4">
           <div className="min-w-0">
             <div className="label-tech mb-1.5">
@@ -94,7 +94,7 @@ export default function DefectPage({ params }: { params: Promise<{ id: string }>
               {d.inspection_number && (
                 <>
                   {" "}· источник{" "}
-                  <Link href={`/inspections/${d.inspection}`} className="text-teal-strong hover:underline">
+                  <Link href={`/inspections/${d.inspection}`} className="text-accent-strong hover:underline">
                     {d.inspection_number}
                   </Link>
                 </>
@@ -102,7 +102,7 @@ export default function DefectPage({ params }: { params: Promise<{ id: string }>
             </div>
             <h1 className="text-[22px] leading-tight font-semibold tracking-[-0.015em] md:text-[26px]">{d.defect_type}</h1>
             <p className="mt-1.5 text-sm text-muted">
-              <Link href={`/buildings/${d.building}`} className="text-ink hover:text-teal-strong">
+              <Link href={`/buildings/${d.building}`} className="text-ink hover:text-accent-strong">
                 {d.building_address}
               </Link>{" "}
               · {d.element_path.join(" → ")}
@@ -136,8 +136,8 @@ export default function DefectPage({ params }: { params: Promise<{ id: string }>
           <Card index="A" title="Описание">
             <p className="text-[15px] leading-relaxed whitespace-pre-line text-ink">{d.description}</p>
             {d.recommendations && (
-              <div className="mt-4 rounded-md border-l-2 border-teal bg-teal-soft/50 px-3 py-2.5">
-                <div className="label-tech mb-1 !text-teal-strong">Рекомендовано инженером</div>
+              <div className="mt-4 rounded-md border-l-2 border-accent bg-accent-soft/50 px-3 py-2.5">
+                <div className="label-tech mb-1 !text-accent-strong">Рекомендовано инженером</div>
                 <p className="text-sm">{d.recommendations}</p>
               </div>
             )}
@@ -215,7 +215,7 @@ export default function DefectPage({ params }: { params: Promise<{ id: string }>
                       role="radio"
                       aria-checked={riskForm.category === r}
                       onClick={() => setRiskForm({ ...riskForm, category: r })}
-                      className={riskForm.category === r ? "rounded-md border border-teal-strong bg-teal-soft py-1.5 font-mono text-sm text-teal-strong" : "rounded-md border border-line py-1.5 font-mono text-sm hover:border-line-strong"}
+                      className={riskForm.category === r ? "rounded-md border border-accent-strong bg-accent-soft py-1.5 font-mono text-sm text-accent-strong" : "rounded-md border border-line py-1.5 font-mono text-sm hover:border-line-strong"}
                     >
                       {r}
                     </button>
@@ -276,7 +276,7 @@ export default function DefectPage({ params }: { params: Promise<{ id: string }>
                     .sort((a, b) => a.at.localeCompare(b.at))
                     .map((item) => (
                       <li key={item.kind === "event" ? item.e.id : item.o.id} className="relative">
-                        <span aria-hidden className={item.kind === "obs" ? "absolute top-1 -left-[21px] size-2.5 rotate-45 border-2 border-surface bg-warning" : "absolute top-1 -left-[21px] size-2.5 rounded-full border-2 border-surface bg-teal"} />
+                        <span aria-hidden className={item.kind === "obs" ? "absolute top-1 -left-[21px] size-2.5 rotate-45 border-2 border-surface bg-warning" : "absolute top-1 -left-[21px] size-2.5 rounded-full border-2 border-surface bg-accent"} />
                         {item.kind === "event" ? (
                           <>
                             <div className="text-sm text-ink">{DEFECT_STATUS[item.e.to_status].label}</div>

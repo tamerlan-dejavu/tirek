@@ -67,7 +67,7 @@ export default function DocumentsPage() {
                   header: <span className="sr-only">Скачать</span>,
                   align: "right",
                   render: (r) => (
-                    <a className="inline-flex items-center gap-1 text-[13px] font-medium text-teal-strong hover:underline" href={`${API_BASE}/v1/files/${r.file}/download/`}>
+                    <a className="inline-flex items-center gap-1 text-[13px] font-medium text-accent-strong hover:underline" href={`${API_BASE}/v1/files/${r.file}/download/`}>
                       <Download aria-hidden className="size-3.5" /> Скачать
                     </a>
                   ),

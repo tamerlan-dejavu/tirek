@@ -62,7 +62,7 @@ export function MonthCalendar({ items, onSelect }: { items: WorkOrder[]; onSelec
               <div
                 className={clsx(
                   "mb-1 inline-grid size-6 place-items-center rounded-full font-mono text-[11px] tabular",
-                  key === todayIso ? "bg-teal-strong text-white" : inMonth ? "text-ink" : "text-faint",
+                  key === todayIso ? "border border-accent bg-accent-soft text-ink" : inMonth ? "text-ink" : "text-faint",
                 )}
               >
                 {d.getDate()}

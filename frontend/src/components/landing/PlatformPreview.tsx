@@ -30,7 +30,7 @@ const DEMO: Defect[] = [
 
 export function PlatformPreview() {
   return (
-    <div className="overflow-hidden rounded-xl border border-white/10 bg-canvas text-ink shadow-[0_40px_80px_-30px_rgb(0_0_0/0.6)]">
+    <div className="overflow-hidden rounded-xl border border-line bg-canvas text-ink">
       <div className="flex items-center justify-between border-b border-line bg-surface px-4 py-2.5">
         <div className="flex items-center gap-3">
           <span className="flex gap-1.5" aria-hidden>

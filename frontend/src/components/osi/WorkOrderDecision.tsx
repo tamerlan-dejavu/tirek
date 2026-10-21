@@ -20,14 +20,14 @@ export function WorkOrderDecision({ workOrder }: { workOrder: WorkOrder }) {
   if (!["proposed", "postponed"].includes(workOrder.status)) return null;
 
   return (
-    <div className="mt-3 rounded-md border border-teal/40 bg-teal-soft/40 p-3">
-      <div className="label-tech mb-2 !text-teal-strong">Требуется решение ОСИ</div>
+    <div className="mt-3 rounded-md border border-accent/40 bg-accent-soft/40 p-3">
+      <div className="label-tech mb-2 !text-accent-strong">Требуется решение ОСИ</div>
       <input
         value={reason}
         onChange={(e) => setReason(e.target.value)}
         placeholder="Причина — обязательна при переносе или отклонении"
         aria-label="Причина решения"
-        className="h-9 w-full rounded-md border border-line bg-surface px-2.5 text-sm focus:border-teal focus:outline-none"
+        className="h-9 w-full rounded-md border border-line bg-surface px-2.5 text-sm focus:border-accent focus:outline-none"
       />
       <div className="mt-2 flex flex-wrap gap-2">
         <Button size="sm" icon={<Check className="size-3.5" />} onClick={() => transition.mutate({ status: "agreed", reason })}>

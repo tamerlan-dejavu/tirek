@@ -35,17 +35,17 @@ function Section({
   dark?: boolean;
 }) {
   return (
-    <section id={id} aria-labelledby={`${id}-title`} className={dark ? "bg-navy text-white" : "bg-canvas text-ink"}>
-      <div className="mx-auto max-w-[1200px] px-5 py-20 md:px-8 md:py-28">
+    <section id={id} aria-labelledby={`${id}-title`} className={dark ? "border-t border-line bg-base-2 text-ink" : "border-t border-line bg-canvas text-ink"}>
+      <div className="mx-auto max-w-[1240px] px-5 py-20 md:px-8 md:py-28 lg:py-32">
         <div className="grid gap-10 lg:grid-cols-[220px_1fr]">
-          <div className={dark ? "font-mono text-xs tracking-[0.14em] text-white/45 uppercase" : "label-tech"}>
-            <span className={dark ? "text-teal" : "text-teal-strong"}>{index}</span> / {kicker}
+          <div className="label-tech">
+            <span className="text-accent">{index}</span> / {kicker}
           </div>
           <div>
-            <h2 id={`${id}-title`} className="max-w-3xl text-[30px] leading-[1.1] font-semibold tracking-[-0.025em] md:text-[42px]">
+            <h2 id={`${id}-title`} className="max-w-3xl text-[clamp(1.875rem,3.4vw,3rem)] leading-[1.1] font-semibold tracking-[-0.03em]">
               {title}
             </h2>
-            {lead && <p className={dark ? "mt-5 max-w-2xl text-lg text-white/65" : "mt-5 max-w-2xl text-lg text-muted"}>{lead}</p>}
+            {lead && <p className="mt-5 max-w-2xl text-[17px] leading-relaxed text-muted md:text-lg">{lead}</p>}
             <div className="mt-12">{children}</div>
           </div>
         </div>
@@ -93,34 +93,34 @@ const MONTHS = ["янв", "фев", "мар", "апр", "май", "июн", "и�
 
 export default function LandingPage() {
   return (
-    <div className="bg-navy">
+    <div className="bg-base">
       {/* A. HERO */}
-      <header className="relative overflow-hidden bg-navy text-white">
-        <div aria-hidden className="grid-blueprint absolute inset-0 opacity-70" />
-        <div aria-hidden className="absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(ellipse_at_70%_40%,rgb(32_166_166/0.10),transparent_60%)]" />
+      <header className="relative overflow-hidden bg-base text-ink">
+        {/* barely perceptible depth on the first screen */}
+        <div aria-hidden className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_70%_30%,rgb(255_255_255/0.035),transparent_70%)]" />
 
-        <nav className="relative mx-auto flex max-w-[1200px] items-center justify-between px-5 py-5 md:px-8" aria-label="Сайт">
+        <nav className="relative mx-auto flex max-w-[1240px] items-center justify-between px-5 py-5 md:px-8" aria-label="Сайт">
           <Logo />
-          <div className="hidden items-center gap-7 text-sm text-white/65 md:flex">
-            <a href="#how" className="hover:text-white">Как это работает</a>
-            <a href="#platform" className="hover:text-white">Платформа</a>
-            <a href="#osi" className="hover:text-white">Для ОСИ</a>
-            <a href="#reports" className="hover:text-white">Отчёты</a>
+          <div className="hidden items-center gap-7 text-sm text-muted md:flex">
+            <a href="#how" className="hover:text-ink">Как это работает</a>
+            <a href="#platform" className="hover:text-ink">Платформа</a>
+            <a href="#osi" className="hover:text-ink">Для ОСИ</a>
+            <a href="#reports" className="hover:text-ink">Отчёты</a>
           </div>
           <Link href="/login" className={buttonClass("inverse-outline", "sm")}>
             Вход
           </Link>
         </nav>
 
-        <div className="relative mx-auto grid max-w-[1200px] items-center gap-10 px-5 pt-10 pb-20 md:px-8 lg:grid-cols-[1fr_1.05fr] lg:pt-16 lg:pb-28">
-          <div className="animate-[fade-up_700ms_var(--ease-precise)_both]">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/15 px-3 py-1 font-mono text-[11px] tracking-[0.12em] text-white/60 uppercase">
-              <span className="size-1.5 rounded-full bg-teal" /> Инженерное сопровождение МКД
+        <div className="relative mx-auto grid max-w-[1240px] items-center gap-12 px-5 pt-12 pb-20 md:px-8 lg:grid-cols-[1fr_1.05fr] lg:pt-20 lg:pb-32">
+          <div className="animate-[fade-up_250ms_var(--ease-precise)_both]">
+            <div className="mb-7 inline-flex items-center gap-2 rounded-md border border-line bg-surface px-3 py-1.5 font-mono text-[11px] tracking-[0.1em] text-muted uppercase">
+              <span className="size-1.5 rounded-full bg-accent" /> Инженерное сопровождение МКД
             </div>
-            <h1 className="text-[44px] leading-[1.02] font-semibold tracking-[-0.035em] md:text-[64px]">
+            <h1 className="text-[clamp(2.5rem,6vw,4.5rem)] leading-[1.03] font-bold tracking-[-0.04em]">
               Инженерная ясность для&nbsp;каждого дома
             </h1>
-            <p className="mt-6 max-w-xl text-lg leading-relaxed text-white/70">
+            <p className="mt-6 max-w-xl text-[17px] leading-relaxed text-muted md:text-lg">
               Tirek помогает объединениям собственников понимать техническое состояние дома, документировать дефекты,
               планировать профилактику и принимать обоснованные решения — на основе проверенных инженерных данных.
             </p>
@@ -132,33 +132,33 @@ export default function LandingPage() {
                 Посмотреть платформу
               </a>
             </div>
-            <dl className="mt-12 grid max-w-lg grid-cols-3 gap-6 border-t border-white/10 pt-6">
+            <dl className="mt-12 grid max-w-lg grid-cols-3 gap-6 border-t border-line pt-6">
               {[
                 ["R1–R4", "экспертная категория риска"],
                 ["v1 → v2", "история без перезаписи"],
                 ["PDF", "версионированные отчёты"],
               ].map(([k, v]) => (
                 <div key={k}>
-                  <dt className="font-mono text-lg text-white">{k}</dt>
-                  <dd className="mt-1 text-xs leading-snug text-white/50">{v}</dd>
+                  <dt className="font-mono text-lg text-ink">{k}</dt>
+                  <dd className="mt-1 text-xs leading-snug text-faint">{v}</dd>
                 </div>
               ))}
             </dl>
           </div>
           <div className="relative">
             <HeroBuilding />
-            <p className="mt-2 text-right font-mono text-[10px] tracking-wide text-white/35 uppercase">Схема · демонстрационные данные</p>
+            <p className="mt-2 text-right font-mono text-[10px] tracking-wide text-faint uppercase">Схема · демонстрационные данные</p>
           </div>
         </div>
 
         {/* brand statement */}
-        <div className="relative border-t border-white/10">
-          <div className="mx-auto flex max-w-[1200px] flex-col gap-4 px-5 py-10 md:flex-row md:items-center md:justify-between md:px-8">
+        <div className="relative border-t border-line">
+          <div className="mx-auto flex max-w-[1240px] flex-col gap-4 px-5 py-10 md:flex-row md:items-center md:justify-between md:px-8">
             <p className="text-[22px] leading-snug font-medium tracking-[-0.015em] md:text-[28px]">
               «Мы не заменяем ОСИ.
-              <br className="hidden md:block" /> Мы становимся его <span className="text-teal">техническим партнёром</span>».
+              <br className="hidden md:block" /> Мы становимся его <span className="text-accent">техническим партнёром</span>».
             </p>
-            <p className="max-w-sm text-sm text-white/55">
+            <p className="max-w-sm text-sm text-muted">
               Управленческие решения остаются за ОСИ. Технические выводы подтверждают ответственные инженеры.
             </p>
           </div>
@@ -191,11 +191,11 @@ export default function LandingPage() {
                         {STEPS.map(([n, t, d]) => (
               <li key={n} className="relative pr-4">
                 <div className="flex items-center gap-3">
-                  <span className="relative z-10 grid size-6 shrink-0 place-items-center rounded-full border border-teal bg-navy font-mono text-[10px] text-teal">{n}</span>
-                  <span aria-hidden className="h-px flex-1 bg-gradient-to-r from-teal/50 to-transparent" />
+                  <span className="relative z-10 grid size-7 shrink-0 place-items-center rounded-md border border-line-strong bg-surface font-mono text-[10px] text-accent">{n}</span>
+                  <span aria-hidden className="h-px flex-1 bg-line" />
                 </div>
                 <h3 className="mt-4 text-[17px] font-semibold">{t}</h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-white/60">{d}</p>
+                <p className="mt-1.5 text-sm leading-relaxed text-muted">{d}</p>
               </li>
             ))}
           </ol>
@@ -211,10 +211,10 @@ export default function LandingPage() {
           dark
         >
           <PlatformPreview />
-          <ul className="mt-8 grid gap-4 text-sm text-white/70 md:grid-cols-3">
+          <ul className="mt-8 grid gap-4 text-sm text-muted md:grid-cols-3">
             {["Серьёзность и статус — разные признаки: критический дефект может быть уже в работе", "Предварительные наблюдения визуально отличаются от утверждённых выводов", "Неизвестные характеристики показываются как «неизвестно», а не придумываются"].map((t) => (
               <li key={t} className="flex gap-2.5">
-                <Check aria-hidden className="mt-0.5 size-4 shrink-0 text-teal" /> {t}
+                <Check aria-hidden className="mt-0.5 size-4 shrink-0 text-accent" /> {t}
               </li>
             ))}
           </ul>
@@ -226,7 +226,7 @@ export default function LandingPage() {
             {LIFECYCLE.map(([s, who, what], i) => (
               <li key={s} className="relative bg-surface p-4">
                 <div className="flex items-center gap-2">
-                  <span className={i === LIFECYCLE.length - 1 ? "size-2 rounded-full bg-healthy" : "size-2 rounded-full bg-teal"} />
+                  <span className={i === LIFECYCLE.length - 1 ? "size-2 rounded-full bg-healthy" : "size-2 rounded-full bg-accent"} />
                   <span className="font-mono text-[10px] text-faint">{String(i + 1).padStart(2, "0")}</span>
                 </div>
                 <div className="mt-3 text-[15px] font-semibold">{s}</div>
@@ -240,7 +240,7 @@ export default function LandingPage() {
 
         {/* F. PREVENTIVE MAINTENANCE */}
         <Section id="maintenance" index="05" kicker="Профилактика" title="План работ, который виден заранее" lead="Мероприятия создаются из подтверждённых дефектов и регламентных осмотров — с приоритетом, сроком и ответственным.">
-          <div className="registration overflow-x-auto rounded-lg border border-line bg-surface p-5">
+          <div className="overflow-x-auto rounded-lg border border-line bg-surface p-5">
             <div className="min-w-[640px]">
               <div className="grid grid-cols-[220px_repeat(12,1fr)] border-b border-line pb-2">
                 <span className="label-tech">Мероприятие</span>
@@ -265,17 +265,17 @@ export default function LandingPage() {
 
         {/* G. PARTNERSHIP WITH OSI */}
         <Section id="osi" index="06" kicker="Партнёрство с ОСИ" title="Чёткое разделение ответственности" lead="Tirek усиливает ОСИ инженерной экспертизой, но не забирает его полномочия." dark>
-          <div className="grid gap-px overflow-hidden rounded-lg border border-white/10 bg-white/10 md:grid-cols-2">
+          <div className="grid gap-px overflow-hidden rounded-lg border border-line bg-line md:grid-cols-2">
             {[
               ["Инженерная организация · Tirek", ["Обследует дом по стандартному чек-листу", "Фиксирует дефекты с фото и местом", "Подтверждает категории риска с обоснованием", "Рекомендует мероприятия и сроки", "Проверяет результат работ"]],
               ["ОСИ", ["Видит утверждённые сведения о своём доме", "Согласовывает, переносит или отклоняет работы", "Фиксирует причины решений", "Скачивает отчёты и документы", "Сохраняет все организационные полномочия"]],
             ].map(([title, items]) => (
-              <div key={title as string} className="bg-navy p-7">
-                <h3 className="font-mono text-xs tracking-[0.14em] text-teal uppercase">{title as string}</h3>
+              <div key={title as string} className="bg-surface p-7 md:p-8">
+                <h3 className="label-tech !text-accent">{title as string}</h3>
                 <ul className="mt-5 space-y-3">
                   {(items as string[]).map((t) => (
-                    <li key={t} className="flex gap-3 text-[15px] text-white/80">
-                      <span aria-hidden className="mt-2 h-px w-3 shrink-0 bg-white/40" /> {t}
+                    <li key={t} className="flex gap-3 text-[15px] text-muted">
+                      <span aria-hidden className="mt-2.5 h-px w-3 shrink-0 bg-line-strong" /> {t}
                     </li>
                   ))}
                 </ul>
@@ -287,8 +287,8 @@ export default function LandingPage() {
         {/* H. TECHNICAL REPORTING */}
         <Section id="reports" index="07" kicker="Технические отчёты" title="Отчёт, который можно проверить" lead="PDF формируется только из утверждённого обследования. Каждая версия неизменна и хранится с контрольной суммой.">
           <div className="grid items-start gap-10 lg:grid-cols-[1fr_1fr]">
-            <div className="registration rotate-[-0.6deg] rounded-sm border border-line bg-surface p-7 shadow-[0_30px_60px_-30px_rgb(16_29_44/0.35)]">
-              <div className="flex items-start justify-between border-b-2 border-ink pb-3">
+            <div className="rounded-lg border border-line bg-surface p-7 md:p-8">
+              <div className="flex items-start justify-between border-b border-line-strong pb-4">
                 <div>
                   <div className="label-tech">Tirek · эксплуатационный отчёт</div>
                   <div className="mt-1 text-lg font-semibold">Отчёт по обследованию INS-2026-0001</div>
@@ -318,7 +318,7 @@ export default function LandingPage() {
                 ["Версии, а не перезапись", "Исправление — новая версия с причиной; прежняя остаётся доступной."],
                 ["Честный статус документа", "Отчёт Tirek не является официальным экспертным заключением — это фиксируется в самом документе."],
               ].map(([t, d]) => (
-                <li key={t} className="border-l-2 border-teal pl-4">
+                <li key={t} className="border-l-2 border-accent pl-4">
                   <h3 className="font-semibold">{t}</h3>
                   <p className="mt-1 text-[15px] text-muted">{d}</p>
                 </li>
@@ -328,15 +328,14 @@ export default function LandingPage() {
         </Section>
 
         {/* I. FINAL CTA */}
-        <section id="contact" className="relative overflow-hidden bg-navy text-white">
-          <div aria-hidden className="grid-blueprint absolute inset-0 opacity-60" />
-          <div className="relative mx-auto max-w-[1200px] px-5 py-24 md:px-8">
+        <section id="contact" className="relative overflow-hidden border-t border-line bg-base text-ink">
+          <div className="relative mx-auto max-w-[1240px] px-5 py-24 md:px-8 md:py-28 lg:py-32">
             <div className="max-w-2xl">
-              <div className="font-mono text-xs tracking-[0.14em] text-white/45 uppercase">
-                <span className="text-teal">08</span> / Начать
+              <div className="label-tech">
+                <span className="text-accent">08</span> / Начать
               </div>
-              <h2 className="mt-6 text-[34px] leading-[1.08] font-semibold tracking-[-0.025em] md:text-[48px]">Начните с технического обследования вашего дома</h2>
-              <p className="mt-5 text-lg text-white/65">Обсудим состав осмотра, сроки и то, какие сведения о доме уже есть. Без обязательств.</p>
+              <h2 className="mt-6 text-[clamp(2rem,4.2vw,3.25rem)] leading-[1.08] font-bold tracking-[-0.035em]">Начните с технического обследования вашего дома</h2>
+              <p className="mt-5 text-lg text-muted">Обсудим состав осмотра, сроки и то, какие сведения о доме уже есть. Без обязательств.</p>
               <div className="mt-9 flex flex-wrap gap-3">
                 <a href={CONTACT_HREF} className={buttonClass("inverse", "lg")}>
                   Запросить обследование <ArrowUpRight className="size-4" />
@@ -350,8 +349,8 @@ export default function LandingPage() {
         </section>
       </main>
 
-      <footer className="border-t border-white/10 bg-navy text-white/45">
-        <div className="mx-auto flex max-w-[1200px] flex-col gap-4 px-5 py-8 text-xs md:flex-row md:items-center md:justify-between md:px-8">
+      <footer className="border-t border-line bg-base text-faint">
+        <div className="mx-auto flex max-w-[1240px] flex-col gap-4 px-5 py-8 text-xs md:flex-row md:items-center md:justify-between md:px-8">
           <Logo />
           <p className="max-w-xl">
             Tirek не заменяет инженерную экспертизу, работу ОСИ и фактическое обслуживание здания. Он связывает эти процессы в единую управляемую цифровую систему.

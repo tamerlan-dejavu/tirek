@@ -100,7 +100,7 @@ export function MonthlyColumns({ data }: { data: { month: string; detected: numb
               <rect x={cx - bw - 1} y={y(d.detected)} width={bw} height={H - padB - y(d.detected)} fill="var(--color-steel)">
                 <title>{`${d.month}: выявлено ${d.detected}`}</title>
               </rect>
-              <rect x={cx + 1} y={y(d.closed)} width={bw} height={H - padB - y(d.closed)} fill="var(--color-teal)">
+              <rect x={cx + 1} y={y(d.closed)} width={bw} height={H - padB - y(d.closed)} fill="var(--color-accent)">
                 <title>{`${d.month}: закрыто ${d.closed}`}</title>
               </rect>
               <text x={cx} y={H - 6} textAnchor="middle" fontSize="9" fontFamily="var(--font-mono)" fill="var(--color-muted)">
@@ -120,7 +120,7 @@ export function MonthlyColumns({ data }: { data: { month: string; detected: numb
           <span className="size-2 rounded-[2px] bg-steel" /> выявлено
         </span>
         <span className="inline-flex items-center gap-1.5">
-          <span className="size-2 rounded-[2px] bg-teal" /> закрыто
+          <span className="size-2 rounded-[2px] bg-accent" /> закрыто
         </span>
         <span className="ml-auto">шт. · 12 мес.</span>
       </figcaption>

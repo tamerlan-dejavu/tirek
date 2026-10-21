@@ -1,4 +1,5 @@
 import "@fontsource-variable/inter";
+import "@fontsource-variable/manrope";
 import "@fontsource/ibm-plex-mono/400.css";
 import "@fontsource/ibm-plex-mono/500.css";
 
@@ -15,7 +16,7 @@ export const metadata: Metadata = {
     "Цифровая платформа инженерного сопровождения многоквартирных домов: обследования, дефекты, риски, план работ.",
 };
 
-export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#101D2C" };
+export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#0C0D10", colorScheme: "dark" };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (

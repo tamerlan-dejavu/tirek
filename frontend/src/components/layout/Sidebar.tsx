@@ -87,8 +87,8 @@ export function Sidebar({ groups, onNavigate }: { groups: NavGroup[]; onNavigate
   const membership = me?.memberships[0];
 
   return (
-    <div className="flex h-full flex-col bg-navy text-white">
-      <div className="flex h-14 items-center border-b border-white/[0.07] px-5">
+    <div className="flex h-full flex-col border-r border-line bg-base text-ink">
+      <div className="flex h-14 items-center border-b border-line px-5">
         <Link href="/" aria-label="Tirek — на главную" onClick={onNavigate}>
           <Logo />
         </Link>
@@ -100,7 +100,7 @@ export function Sidebar({ groups, onNavigate }: { groups: NavGroup[]; onNavigate
           if (!items.length) return null;
           return (
             <div key={group.title} className="mb-5">
-              <div className="mb-1.5 px-2 font-mono text-[10px] tracking-[0.14em] text-white/40 uppercase">
+              <div className="mb-1.5 px-2 font-mono text-[10px] tracking-[0.12em] text-faint uppercase">
                 {group.title}
               </div>
               <ul className="space-y-px">
@@ -115,14 +115,14 @@ export function Sidebar({ groups, onNavigate }: { groups: NavGroup[]; onNavigate
                         onClick={onNavigate}
                         aria-current={active ? "page" : undefined}
                         className={clsx(
-                          "group relative flex h-9 items-center gap-3 rounded-md px-2 text-[13.5px] transition-colors",
-                          active ? "bg-white/[0.07] text-white" : "text-white/65 hover:bg-white/[0.04] hover:text-white",
+                          "group relative flex h-9 items-center gap-3 rounded-md px-2.5 text-[13.5px] transition-colors duration-[var(--duration-base)]",
+                          active ? "bg-mist text-ink" : "text-muted hover:bg-mist/60 hover:text-ink",
                         )}
                       >
-                        {active && <span aria-hidden className="absolute top-2 bottom-2 -left-3 w-[2px] bg-teal" />}
-                        <Icon aria-hidden className={clsx("size-4", active ? "text-teal" : "text-white/45 group-hover:text-white/70")} strokeWidth={1.7} />
+                        {active && <span aria-hidden className="absolute top-2 bottom-2 -left-3 w-[2px] bg-accent" />}
+                        <Icon aria-hidden className={clsx("size-4", active ? "text-accent" : "text-faint group-hover:text-muted")} strokeWidth={1.7} />
                         <span className="flex-1">{item.label}</span>
-                        <span className="font-mono text-[10px] text-white/25">{item.code}</span>
+                        <span className="font-mono text-[10px] text-faint/70">{item.code}</span>
                       </Link>
                     </li>
                   );
@@ -134,9 +134,9 @@ export function Sidebar({ groups, onNavigate }: { groups: NavGroup[]; onNavigate
       </nav>
 
       {membership && (
-        <div className="border-t border-white/[0.07] px-5 py-4">
-          <div className="truncate text-[13px] text-white/90">{membership.organization_name}</div>
-          <div className="mt-0.5 font-mono text-[10px] tracking-[0.1em] text-white/45 uppercase">
+        <div className="border-t border-line px-5 py-4">
+          <div className="truncate text-[13px] text-ink">{membership.organization_name}</div>
+          <div className="mt-0.5 font-mono text-[10px] tracking-[0.1em] text-faint uppercase">
             {ROLE_LABEL[membership.role] ?? membership.role}
           </div>
         </div>

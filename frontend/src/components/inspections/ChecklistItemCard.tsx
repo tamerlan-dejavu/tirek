@@ -83,7 +83,7 @@ export function ChecklistItemCard({
       id={`item-${item.id}`}
       className={clsx(
         "scroll-mt-32 rounded-lg border bg-surface",
-        draft.compliance === "fail" ? "border-critical/50" : missingRequired ? "border-dashed border-warning/70" : "border-line",
+        draft.compliance === "fail" ? "border-critical/50" : missingRequired ? "border-line-strong" : "border-line",
       )}
       aria-labelledby={`item-title-${item.id}`}
     >
@@ -135,7 +135,7 @@ export function ChecklistItemCard({
               inputMode="decimal"
               value={draft.number_value ?? ""}
               onChange={(e) => setDraft({ ...draft, number_value: e.target.value || null })}
-              className="h-12 w-40 rounded-md border border-line px-3 font-mono text-lg tabular focus:border-teal focus:outline-none"
+              className="h-12 w-40 rounded-md border border-line px-3 font-mono text-lg tabular focus:border-accent focus:outline-none"
               aria-label={`${item.text}, ${item.unit}`}
             />
             <span className="font-mono text-sm text-muted">{item.unit}</span>
@@ -145,7 +145,7 @@ export function ChecklistItemCard({
           <textarea
             value={draft.text_value}
             onChange={(e) => setDraft({ ...draft, text_value: e.target.value })}
-            className="min-h-20 w-full rounded-md border border-line p-3 text-[15px] focus:border-teal focus:outline-none"
+            className="min-h-20 w-full rounded-md border border-line p-3 text-[15px] focus:border-accent focus:outline-none"
             aria-label={item.text}
           />
         )}
@@ -168,7 +168,7 @@ export function ChecklistItemCard({
           onChange={(e) => setDraft({ ...draft, comment: e.target.value })}
           placeholder="Комментарий (необязательно)"
           aria-label="Комментарий"
-          className="h-11 w-full rounded-md border border-line px-3 text-sm focus:border-teal focus:outline-none"
+          className="h-11 w-full rounded-md border border-line px-3 text-sm focus:border-accent focus:outline-none"
         />
       </div>
 
@@ -181,7 +181,7 @@ export function ChecklistItemCard({
           title={answerId ? undefined : "Сначала отметьте результат проверки"}
         >
           {uploading ? <LoaderCircle className="size-4 animate-spin" /> : <Camera className="size-4" />}
-          Фото{photos > 0 && <span className="font-mono text-xs text-teal-strong">+{photos}</span>}
+          Фото{photos > 0 && <span className="font-mono text-xs text-accent-strong">+{photos}</span>}
           <input
             type="file"
             accept="image/*"
@@ -192,7 +192,7 @@ export function ChecklistItemCard({
           />
         </label>
         {draft.compliance === "fail" && answerId && (
-          <button onClick={() => onCreateDefect(answerId)} className="inline-flex h-11 items-center gap-2 rounded-md bg-critical px-4 text-sm font-medium text-white active:bg-critical-ink">
+          <button onClick={() => onCreateDefect(answerId)} className="inline-flex h-11 items-center gap-2 rounded-[var(--radius-button)] border border-critical/50 bg-critical-soft px-4 text-sm font-medium text-critical-ink transition-colors hover:border-critical">
             <TriangleAlert className="size-4" /> Зафиксировать дефект
           </button>
         )}
