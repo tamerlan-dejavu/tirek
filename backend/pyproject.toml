@@ -1,0 +1,56 @@
+[project]
+name = "tirek-backend"
+version = "0.1.0"
+description = "Tirek MVP 1.0 — backend (Django + DRF)"
+requires-python = ">=3.12"
+dependencies = [
+    "Django>=5.2,<5.3",
+    "djangorestframework>=3.16",
+    "drf-spectacular>=0.28",
+    "django-environ>=0.12",
+    "django-cors-headers>=4.7",
+    "django-filter>=25.1",
+    "django-storages[s3]>=1.14",
+    "django-simple-history>=3.8",
+    "argon2-cffi>=23.1",
+    "psycopg[binary]>=3.2",
+    "celery[redis]>=5.5",
+    "gunicorn>=23.0",
+    "python-magic>=0.4.27",
+    "Pillow>=11.0",
+    "weasyprint>=65.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3",
+    "pytest-django>=4.10",
+    "pytest-cov>=6.0",
+    "factory-boy>=3.3",
+    "ruff>=0.11",
+]
+
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["config*", "apps*"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.test"
+python_files = ["test_*.py"]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["**/migrations/*"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "DJ", "S"]
+ignore = ["S101"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S105", "S106"]

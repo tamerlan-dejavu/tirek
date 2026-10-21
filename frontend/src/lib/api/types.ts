@@ -1,0 +1,173 @@
+/**
+ * Hand-written domain types for the scaffold.
+ * Replace with generated types (`npm run api:generate` → schema.d.ts) once the API settles.
+ */
+
+export type UUID = string;
+export type RiskCategory = "R1" | "R2" | "R3" | "R4";
+export type Role = "provider_admin" | "field_specialist" | "reviewing_engineer" | "osi_representative";
+
+export interface Membership {
+  id: UUID;
+  organization: UUID;
+  organization_name: string;
+  organization_type: "provider" | "customer";
+  role: Role;
+}
+
+export interface Me {
+  id: UUID;
+  email: string;
+  full_name: string;
+  position: string;
+  memberships: Membership[];
+}
+
+export interface Building {
+  id: UUID;
+  internal_code: string;
+  name: string;
+  address: string;
+  city: string;
+  year_built: number | null;
+  floors: number | null;
+  entrances: number | null;
+  apartments: number | null;
+  total_area_m2: string | null;
+  structural_scheme: string;
+  completeness: number;
+  field_sources: Record<string, { source: string; recorded_at: string; by: UUID }>;
+}
+
+export interface BuildingElement {
+  id: UUID;
+  building: UUID;
+  parent: UUID | null;
+  element_type: string;
+  name: string;
+  location: string;
+  path: string[];
+}
+
+export type InspectionStatus = "draft" | "submitted" | "returned" | "approved" | "cancelled";
+
+export interface Inspection {
+  id: UUID;
+  number: string;
+  building: UUID;
+  building_address: string;
+  status: InspectionStatus;
+  assignee: UUID;
+  assignee_name: string;
+  template_version: UUID;
+  planned_date: string | null;
+  approved_at: string | null;
+  is_published: boolean;
+  version: number;
+}
+
+export type AnswerType = "compliance" | "number" | "text" | "date" | "photo" | "choice";
+
+export interface ChecklistItem {
+  id: UUID;
+  element_type: string | null;
+  code: string;
+  text: string;
+  guidance: string;
+  answer_type: AnswerType;
+  unit: string;
+  choices: string[];
+  is_required: boolean;
+}
+
+export interface InspectionAnswer {
+  id: UUID;
+  inspection: UUID;
+  item: UUID;
+  element: UUID | null;
+  compliance: "" | "ok" | "fail" | "na";
+  number_value: string | null;
+  text_value: string;
+  date_value: string | null;
+  choice_value: string;
+  comment: string;
+  updated_at: string;
+}
+
+export type DefectStatus =
+  | "detected"
+  | "in_review"
+  | "needs_clarification"
+  | "confirmed"
+  | "planned"
+  | "fixing"
+  | "fix_review"
+  | "closed"
+  | "rejected";
+
+export interface Defect {
+  id: UUID;
+  number: string;
+  building: UUID;
+  building_address: string;
+  element: UUID;
+  element_path: string[];
+  location: string;
+  defect_type: string;
+  description: string;
+  detected_on: string;
+  preliminary_severity: RiskCategory | "";
+  approved_risk: RiskCategory | null;
+  status: DefectStatus;
+  recommendations: string;
+}
+
+export type WorkOrderStatus =
+  | "proposed"
+  | "agreed"
+  | "scheduled"
+  | "in_progress"
+  | "done"
+  | "verified"
+  | "closed"
+  | "rejected"
+  | "postponed"
+  | "cancelled";
+
+export interface WorkOrder {
+  id: UUID;
+  number: string;
+  building: UUID;
+  building_address: string;
+  defect: UUID | null;
+  defect_number: string | null;
+  risk_category: RiskCategory | null;
+  title: string;
+  priority: "urgent" | "high" | "normal" | "low";
+  recommended_date: string | null;
+  planned_date: string | null;
+  status: WorkOrderStatus;
+  author_name: string | null;
+  created_at: string;
+}
+
+export interface PortalSummary {
+  open_defects: number;
+  open_defects_by_risk: Record<RiskCategory, number>;
+  active_work_orders: number;
+  awaiting_decision: number;
+  overdue_work_orders: number;
+  last_inspection: { id: string; number: string; approved_at: string } | null;
+}
+
+export interface Dashboard {
+  buildings: number;
+  inspections_total: number;
+  inspections_awaiting_review: number;
+  defects_open: number;
+  defects_r1: number;
+  defects_r2: number;
+  work_orders_due_soon: number;
+  work_orders_overdue: number;
+  work_orders_completed: number;
+}

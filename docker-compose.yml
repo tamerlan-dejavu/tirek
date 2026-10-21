@@ -1,0 +1,76 @@
+# Local development stack. Production uses docker-compose.prod.yml on top of this.
+# Host ports are configurable in .env (TIREK_*_PORT) so the stack can coexist with other projects.
+# db and redis are reachable only inside the docker network.
+# Files: private docker volume in dev; production uses S3 (STORAGE_BACKEND=s3).
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-tirek}
+      POSTGRES_USER: ${POSTGRES_USER:-tirek}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tirek}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-tirek}"]
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "${TIREK_MAILPIT_PORT:-8025}:8025"
+
+  backend:
+    build:
+      context: ./backend
+      target: dev
+    env_file: .env
+    # Apply migrations on start so a fresh checkout works with a single `docker compose up`
+    command: sh -c "python manage.py migrate --noinput && python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - ./backend:/app
+      - /app/.venv # hide the host virtualenv from the container
+      - privatefiles:/data/private
+    ports:
+      - "${TIREK_BACKEND_PORT:-8010}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  worker:
+    build:
+      context: ./backend
+      target: dev
+    env_file: .env
+    command: celery -A config worker -l info
+    volumes:
+      - ./backend:/app
+      - /app/.venv
+      - privatefiles:/data/private # worker writes generated PDFs
+    depends_on: [backend]
+
+  frontend:
+    build:
+      context: ./frontend
+      target: dev
+    env_file: .env
+    environment:
+      WATCHPACK_POLLING: "true" # file watching through a Windows bind mount
+    command: npm run dev
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    ports:
+      - "${TIREK_FRONTEND_PORT:-3000}:3000"
+    depends_on: [backend]
+
+volumes:
+  pgdata:
+  privatefiles:
