@@ -60,7 +60,7 @@ function DefectListInner({
     <div>
       {showFilters && (
         <div className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-3">
-          <label className="flex h-8 min-w-[220px] flex-1 items-center gap-2 rounded-md border border-line bg-surface px-2.5 focus-within:border-teal">
+          <label className="flex h-8 min-w-[220px] flex-1 items-center gap-2 rounded-md border border-line bg-surface px-2.5 focus-within:border-accent">
             <Search aria-hidden className="size-4 text-faint" />
             <input
               type="search"

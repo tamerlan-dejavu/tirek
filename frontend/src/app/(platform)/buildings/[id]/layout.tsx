@@ -29,7 +29,7 @@ export default function BuildingLayout({ children, params }: { children: ReactNo
 
   return (
     <>
-      <header className="registration mb-6 rounded-lg border border-line bg-surface">
+      <header className="mb-6 rounded-lg border border-line bg-surface">
         <div className="grid-blueprint-light flex flex-wrap items-start justify-between gap-4 border-b border-line px-5 py-5">
           <div className="min-w-0">
             <div className="label-tech mb-1.5">02 · Технический паспорт объекта</div>
@@ -52,7 +52,7 @@ export default function BuildingLayout({ children, params }: { children: ReactNo
               </div>
               <div className="mt-1.5 flex gap-[3px]" aria-hidden>
                 {Array.from({ length: 10 }, (_, i) => (
-                  <span key={i} className={i < Math.round(b.completeness / 10) ? "h-1.5 flex-1 rounded-[1px] bg-teal" : "h-1.5 flex-1 rounded-[1px] bg-mist"} />
+                  <span key={i} className={i < Math.round(b.completeness / 10) ? "h-1.5 flex-1 rounded-[1px] bg-accent" : "h-1.5 flex-1 rounded-[1px] bg-mist"} />
                 ))}
               </div>
               <p className="mt-1.5 text-[11px] text-muted">«Неизвестно» не считается заполненным</p>

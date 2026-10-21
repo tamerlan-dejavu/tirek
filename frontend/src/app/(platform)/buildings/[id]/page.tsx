@@ -40,7 +40,7 @@ export default function BuildingOverview({ params }: { params: Promise<{ id: str
           index="A"
           title="Схема объекта · открытые дефекты"
           actions={
-            <Link href={`/buildings/${id}/defects`} className="text-[13px] text-teal-strong hover:underline">
+            <Link href={`/buildings/${id}/defects`} className="text-[13px] text-accent-strong hover:underline">
               Все дефекты
             </Link>
           }

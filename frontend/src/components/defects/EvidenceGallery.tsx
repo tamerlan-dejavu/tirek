@@ -44,7 +44,7 @@ export function EvidenceGallery({ targetType, targetId }: { targetType: string; 
             <button onClick={() => setOpen(f)} className="group relative block aspect-[4/3] w-full overflow-hidden rounded-md border border-line bg-mist">
               {/* eslint-disable-next-line @next/next/no-img-element -- private, access-checked URL */}
               <img src={url(f)} alt={f.caption || f.original_name} className="size-full object-cover transition-transform duration-[var(--duration-slow)] group-hover:scale-[1.02]" />
-              <span className="absolute bottom-1.5 left-1.5 rounded-sm bg-navy/80 px-1.5 py-0.5 font-mono text-[10px] text-white">
+              <span className="absolute bottom-1.5 left-1.5 rounded-sm bg-base/80 px-1.5 py-0.5 font-mono text-[10px] text-white">
                 {String(i + 1).padStart(2, "0")} · {formatDate(f.created_at)}
               </span>
             </button>
@@ -56,7 +56,7 @@ export function EvidenceGallery({ targetType, targetId }: { targetType: string; 
           role="dialog"
           aria-modal="true"
           aria-label={open.caption || open.original_name}
-          className="fixed inset-0 z-50 grid place-items-center bg-navy/85 p-4"
+          className="fixed inset-0 z-50 grid place-items-center bg-base/85 p-4"
           onKeyDown={(e) => e.key === "Escape" && setOpen(null)}
         >
           <button className="absolute inset-0" aria-label="Закрыть" onClick={() => setOpen(null)} />

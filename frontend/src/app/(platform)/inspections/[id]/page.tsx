@@ -39,7 +39,7 @@ export default function InspectionPage({ params }: { params: Promise<{ id: strin
         const stepIdx = STEPS.indexOf(i.status === "returned" ? "draft" : i.status);
         return (
           <>
-            <header className="registration mb-6 rounded-lg border border-line bg-surface">
+            <header className="mb-6 rounded-lg border border-line bg-surface">
               <div className="flex flex-wrap items-start justify-between gap-4 px-5 pt-5 pb-4">
                 <div>
                   <div className="label-tech mb-1.5">03 · Обследование · регулярный визуальный осмотр</div>
@@ -47,7 +47,7 @@ export default function InspectionPage({ params }: { params: Promise<{ id: strin
                     {i.number}
                     {i.version > 1 && <span className="text-muted"> · v{i.version}</span>}
                   </h1>
-                  <Link href={`/buildings/${i.building}`} className="mt-1 block text-sm text-muted hover:text-teal-strong">
+                  <Link href={`/buildings/${i.building}`} className="mt-1 block text-sm text-muted hover:text-accent-strong">
                     {i.building_address}
                   </Link>
                 </div>
@@ -58,7 +58,7 @@ export default function InspectionPage({ params }: { params: Promise<{ id: strin
               </div>
               <ol className="grid grid-cols-3 border-t border-line">
                 {STEPS.map((s, n) => (
-                  <li key={s} className={n <= stepIdx ? "border-t-2 border-teal px-5 py-3" : "border-t-2 border-transparent px-5 py-3"}>
+                  <li key={s} className={n <= stepIdx ? "border-t-2 border-accent px-5 py-3" : "border-t-2 border-transparent px-5 py-3"}>
                     <div className="label-tech">Шаг {n + 1}</div>
                     <div className={n === stepIdx ? "text-sm font-medium" : "text-sm text-muted"}>{INSPECTION_STATUS[s].label}</div>
                   </li>
@@ -121,7 +121,7 @@ export default function InspectionPage({ params }: { params: Promise<{ id: strin
                       <textarea
                         value={comment}
                         onChange={(e) => setComment(e.target.value)}
-                        className="min-h-20 w-full rounded-md border border-line p-2.5 text-sm focus:border-teal focus:outline-none"
+                        className="min-h-20 w-full rounded-md border border-line p-2.5 text-sm focus:border-accent focus:outline-none"
                         placeholder="Что нужно исправить или дополнить"
                         aria-label="Комментарий для возврата"
                       />

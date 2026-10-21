@@ -37,7 +37,7 @@ export default function OsiBuildingPage({ params }: { params: Promise<{ id: stri
             subtitle={`${orUnknown(b.year_built)} г. постройки · ${orUnknown(b.floors)} этажей · ${orUnknown(b.entrances)} подъезда · ${orUnknown(b.apartments)} квартир`}
           />
 
-          <p className="mb-6 border-l-2 border-teal pl-4 text-[15px] text-ink">
+          <p className="mb-6 border-l-2 border-accent pl-4 text-[15px] text-ink">
             «Мы не заменяем ОСИ — мы становимся его техническим партнёром». <span className="text-muted">Инженерные выводы ниже утверждены ответственным инженером; решения о работах принимает ОСИ.</span>
           </p>
 

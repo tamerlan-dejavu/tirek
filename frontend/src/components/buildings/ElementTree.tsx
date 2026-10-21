@@ -17,7 +17,7 @@ export function ElementTree({ elements, counts }: { elements: BuildingElement[];
           {depth > 0 && <span aria-hidden className="absolute top-[18px] -left-4 h-px w-3 bg-line" />}
           <div className="flex items-center justify-between gap-3 py-2">
             <span className="flex items-center gap-2 text-sm">
-              <span className={clsx("size-1.5 rounded-[1px]", depth === 0 ? "bg-steel" : "bg-teal")} aria-hidden />
+              <span className={clsx("size-1.5 rounded-[1px]", depth === 0 ? "bg-steel" : "bg-accent")} aria-hidden />
               <span className="text-ink">{e.name}</span>
               {e.location && <span className="text-muted">· {e.location}</span>}
             </span>

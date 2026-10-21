@@ -21,7 +21,7 @@ function Glyph({ floors, entrances }: { floors: number | null; entrances: number
     <svg viewBox={`0 0 ${w} ${h}`} className="h-12 w-16 shrink-0" aria-hidden>
       <rect x="4" y={h - 4 - f * 2.4} width={w - 8} height={f * 2.4} fill="var(--color-surface)" stroke="var(--color-steel)" strokeWidth="1" />
       {Array.from({ length: e - 1 }, (_, i) => (
-        <path key={i} d={`M${4 + ((i + 1) * (w - 8)) / e} ${h - 4 - f * 2.4}V${h - 4}`} stroke="var(--color-teal)" strokeOpacity=".6" strokeWidth=".8" strokeDasharray="2 1.5" />
+        <path key={i} d={`M${4 + ((i + 1) * (w - 8)) / e} ${h - 4 - f * 2.4}V${h - 4}`} stroke="var(--color-accent)" strokeOpacity=".6" strokeWidth=".8" strokeDasharray="2 1.5" />
       ))}
       <path d={`M0 ${h - 4}H${w}`} stroke="var(--color-ink)" strokeWidth="1" />
       {!floors && (
@@ -44,7 +44,7 @@ export default function BuildingsPage() {
         title="Дома"
         subtitle="Объекты, по которым ваша организация ведёт техническое сопровождение"
         actions={
-          <label className="flex h-9 w-72 items-center gap-2 rounded-md border border-line bg-surface px-2.5 focus-within:border-teal">
+          <label className="flex h-9 w-72 items-center gap-2 rounded-md border border-line bg-surface px-2.5 focus-within:border-accent">
             <Search aria-hidden className="size-4 text-faint" />
             <input
               type="search"
@@ -64,13 +64,13 @@ export default function BuildingsPage() {
               <li key={b.id}>
                 <Link
                   href={`/buildings/${b.id}`}
-                  className="registration group block rounded-lg border border-line bg-surface p-4 transition-colors hover:border-teal/70"
+                  className="group block rounded-lg border border-line bg-surface p-4 transition-colors hover:border-accent/70"
                 >
                   <div className="flex items-start gap-4">
                     <Glyph floors={b.floors} entrances={b.entrances} />
                     <div className="min-w-0 flex-1">
                       <div className="font-mono text-[11px] text-muted">{b.internal_code}</div>
-                      <div className="truncate font-medium text-ink group-hover:text-teal-strong">{b.address}</div>
+                      <div className="truncate font-medium text-ink group-hover:text-accent-strong">{b.address}</div>
                       <div className="mt-0.5 text-xs text-muted">{b.city}</div>
                     </div>
                   </div>

@@ -64,13 +64,13 @@ export default function FillInspectionPage({ params }: { params: Promise<{ id: s
               </div>
             </div>
             <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-mist" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Заполнение чек-листа">
-              <div className="h-full bg-teal transition-[width] duration-[var(--duration-base)]" style={{ width: `${pct}%` }} />
+              <div className="h-full bg-accent transition-[width] duration-[var(--duration-base)]" style={{ width: `${pct}%` }} />
             </div>
             <nav aria-label="Разделы чек-листа" className="mt-2.5 flex gap-1.5 overflow-x-auto pb-0.5">
               {[...groups].map(([g, list]) => {
                 const left = list.filter((i) => !filled[i.id]).length;
                 return (
-                  <a key={g} href={`#item-${list[0].id}`} className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-line bg-surface px-3 text-[12.5px]">
+                  <a key={g} href={`#item-${list[0].id}`} className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md border border-line bg-surface px-3 text-[12.5px] transition-colors hover:border-line-strong">
                     {typeName[g] ?? "Общее"}
                     <span className={left ? "font-mono text-[11px] text-muted" : "font-mono text-[11px] text-healthy-ink"}>{left ? left : "✓"}</span>
                   </a>

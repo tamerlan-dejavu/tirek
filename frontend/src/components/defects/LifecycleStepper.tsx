@@ -18,17 +18,17 @@ export function LifecycleStepper({ status }: { status: DefectStatus }) {
           return (
             <li key={s} className="relative flex flex-1 flex-col items-center text-center" aria-current={current ? "step" : undefined}>
               {i > 0 && (
-                <span aria-hidden className={clsx("absolute top-[9px] right-1/2 h-px w-full", i <= idx ? "bg-teal" : "bg-line")} />
+                <span aria-hidden className={clsx("absolute top-[9px] right-1/2 h-px w-full", i <= idx ? "bg-accent" : "bg-line")} />
               )}
               <span
                 className={clsx(
                   "relative z-10 grid size-[18px] place-items-center rounded-full border text-[9px]",
-                  done && "border-teal bg-teal text-white",
-                  current && "border-teal bg-surface ring-4 ring-teal/15",
+                  done && "border-accent bg-accent text-white",
+                  current && "border-accent bg-surface ring-4 ring-accent/15",
                   !done && !current && "border-line-strong bg-surface",
                 )}
               >
-                {done ? <Check className="size-3" strokeWidth={3} /> : current ? <span className="size-1.5 rounded-full bg-teal" /> : null}
+                {done ? <Check className="size-3" strokeWidth={3} /> : current ? <span className="size-1.5 rounded-full bg-accent" /> : null}
               </span>
               <span className={clsx("mt-1.5 hidden px-1 text-[11px] leading-tight md:block", current ? "font-medium text-ink" : "text-muted")}>
                 {DEFECT_STATUS[s].label}
