@@ -2,7 +2,7 @@
 
 up:
 	test -f .env || cp .env.example .env
-	docker compose up -d --build
+	docker compose up -d --build --renew-anon-volumes
 
 down:
 	docker compose down
