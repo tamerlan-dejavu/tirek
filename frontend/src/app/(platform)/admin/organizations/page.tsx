@@ -66,7 +66,7 @@ export default function OrganizationsPage() {
                   {list.map((m) => (
                     <li key={m.id} className="flex justify-between py-1.5">
                       <span>{m.user_full_name || m.user_email}</span>
-                      <span className="text-ink-muted">{ROLE_LABEL[m.role]}{!m.is_active && " · отключён"}</span>
+                      <span className="text-muted">{ROLE_LABEL[m.role]}{!m.is_active && " · отключён"}</span>
                     </li>
                   ))}
                 </ul>

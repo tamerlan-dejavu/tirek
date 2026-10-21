@@ -1,19 +1,33 @@
 """
-Demo data for local development: two independent providers, one ОСИ, one building,
-a published checklist. Never run against production.
+Demo data for local development and design review. Never run against production.
+
+Creates two independent providers, one ОСИ, four buildings and a realistic slice of the
+workflow (approved/submitted/scheduled inspections, defects R1–R4 in different statuses,
+work orders, observations and histories). Every demo building is labelled «ДЕМО».
 """
+
+from datetime import date, timedelta
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
+from django.utils import timezone
 
 from apps.accounts.models import User
-from apps.buildings.models import Building, BuildingElement, ElementType, StructuralScheme
+from apps.buildings.models import Building, BuildingElement, StructuralScheme
 from apps.checklists.models import (
     AnswerType,
     ChecklistItem,
     ChecklistTemplate,
     ChecklistTemplateVersion,
+)
+from apps.defects.models import Defect, DefectEvent, DefectObservation, DefectStatus
+from apps.inspections.models import (
+    ComplianceValue,
+    Inspection,
+    InspectionAnswer,
+    InspectionReview,
+    InspectionStatus,
 )
 from apps.organizations.models import (
     BuildingAssignment,
@@ -24,27 +38,58 @@ from apps.organizations.models import (
     OrganizationType,
     Role,
 )
+from apps.risks.models import RiskAssessment
+from apps.workorders.models import Priority, WorkOrder, WorkOrderEvent, WorkOrderStatus
 
 PASSWORD = "tirek-demo-2026"  # noqa: S105 — local demo data only, guarded by DEBUG
 
 USERS = [
-    ("admin@provider.local", "Администратор поставщика", Role.PROVIDER_ADMIN),
-    ("field@provider.local", "Полевой специалист", Role.FIELD_SPECIALIST),
-    ("engineer@provider.local", "Проверяющий инженер", Role.REVIEWING_ENGINEER),
+    (
+        "admin@provider.local",
+        "Айгерим Сапарова",
+        "Руководитель технической службы",
+        Role.PROVIDER_ADMIN,
+    ),
+    ("field@provider.local", "Данияр Ахметов", "Инженер-обследователь", Role.FIELD_SPECIALIST),
+    (
+        "engineer@provider.local",
+        "Ерлан Касымов",
+        "Ведущий инженер-конструктор",
+        Role.REVIEWING_ENGINEER,
+    ),
 ]
 
 ITEMS = [
     ("roof", "КР-01", "Состояние кровельного покрытия", AnswerType.COMPLIANCE, ""),
     ("roof", "КР-02", "Площадь участков с протечками", AnswerType.NUMBER, "м²"),
-    ("facade", "ФС-01", "Трещины в наружных стенах и швах", AnswerType.COMPLIANCE, ""),
-    ("basement", "ПД-01", "Подтопление подвала", AnswerType.COMPLIANCE, ""),
-    ("heating", "ОТ-01", "Состояние изоляции трубопроводов", AnswerType.COMPLIANCE, ""),
-    ("electrical", "ЭЛ-01", "Состояние ВРУ", AnswerType.TEXT, ""),
+    ("roof", "КР-03", "Состояние водосточной системы", AnswerType.COMPLIANCE, ""),
+    ("facade", "ФС-01", "Трещины в наружных стенах и межпанельных швах", AnswerType.COMPLIANCE, ""),
+    ("facade", "ФС-02", "Состояние балконных плит и ограждений", AnswerType.COMPLIANCE, ""),
+    ("basement", "ПД-01", "Подтопление и следы замачивания подвала", AnswerType.COMPLIANCE, ""),
+    ("basement", "ПД-02", "Состояние отмостки", AnswerType.COMPLIANCE, ""),
+    ("heating", "ОТ-01", "Состояние изоляции и коррозия трубопроводов", AnswerType.COMPLIANCE, ""),
+    ("water", "ВС-01", "Протечки в узлах водоснабжения", AnswerType.COMPLIANCE, ""),
+    ("electrical", "ЭЛ-01", "Состояние ВРУ и этажных щитов", AnswerType.TEXT, ""),
+]
+
+BUILDINGS = [
+    # code, address, year, floors, entrances, apartments, area, scheme
+    ("ALM-0001", "пр. Достык, 12", 1984, 9, 4, 144, "8 412.60", StructuralScheme.PANEL),
+    ("ALM-0002", "ул. Абая, 48", 1971, 5, 3, 60, None, StructuralScheme.BRICK),
+    ("ALM-0003", "мкр. Самал-2, д. 33", None, 12, 2, 96, "6 230.00", StructuralScheme.MONOLITHIC),
 ]
 
 
+def days_ago(n: int) -> date:
+    return timezone.localdate() - timedelta(days=n)
+
+
+def at(n: int):
+    return timezone.now() - timedelta(days=n)
+
+
 class Command(BaseCommand):
-    help = "Create demo organizations, users, a building and a published checklist."
+    help = "Create demo organizations, users, buildings and a realistic workflow slice."
 
     @transaction.atomic
     def handle(self, *args, **options):
@@ -52,7 +97,7 @@ class Command(BaseCommand):
             raise CommandError("seed_demo is only allowed with DEBUG=true")
 
         provider, _ = Organization.objects.get_or_create(
-            name="Инженерный центр (демо)", defaults={"type": OrganizationType.PROVIDER}
+            name="Инженерный центр «Тирек» (демо)", defaults={"type": OrganizationType.PROVIDER}
         )
         other, _ = Organization.objects.get_or_create(
             name="Другой поставщик (демо)", defaults={"type": OrganizationType.PROVIDER}
@@ -61,73 +106,445 @@ class Command(BaseCommand):
             name="ОСИ «Достык 12» (демо)", defaults={"type": OrganizationType.CUSTOMER}
         )
 
-        users = {}
-        for email, name, role in USERS:
-            users[role] = self._user(email, name, provider, role)
-        self._user("osi@customer.local", "Председатель ОСИ", osi, Role.OSI_REPRESENTATIVE)
-        self._user("admin@other.local", "Админ другого поставщика", other, Role.PROVIDER_ADMIN)
-
-        building, created = Building.objects.get_or_create(
-            internal_code="ALM-0001",
-            defaults={
-                "name": "Жилой дом",
-                "address": "пр. Достык, 12",
-                "floors": 9,
-                "entrances": 4,
-                "structural_scheme": StructuralScheme.PANEL,
-                "created_by": users[Role.PROVIDER_ADMIN],
-            },
+        self.users = {}
+        for email, name, position, role in USERS:
+            self.users[role] = self._user(email, name, position, provider, role)
+        self.osi_user = self._user(
+            "osi@customer.local",
+            "Сауле Нурланова",
+            "Председатель ОСИ",
+            osi,
+            Role.OSI_REPRESENTATIVE,
         )
-        if created:
+        self._user("admin@other.local", "Админ другого поставщика", "", other, Role.PROVIDER_ADMIN)
+
+        self.version = self._checklist(provider)
+
+        if Building.objects.filter(internal_code="ALM-0001").exists():
+            self.stdout.write("Demo buildings already exist — skipping workflow data.")
+        else:
+            b1, b2, b3 = (self._building(row, provider) for row in BUILDINGS)
             BuildingOrganizationLink.objects.create(
-                building=building, organization=provider, function=LinkFunction.TECHNICAL_SUPPORT
+                building=b1, organization=osi, function=LinkFunction.CUSTOMER
+            )
+            foreign = Building.objects.create(
+                internal_code="ALM-0101",
+                name="ДЕМО · объект другого поставщика",
+                address="ул. Толе би, 101",
+                floors=5,
+                entrances=2,
             )
             BuildingOrganizationLink.objects.create(
-                building=building, organization=osi, function=LinkFunction.CUSTOMER
+                building=foreign, organization=other, function=LinkFunction.TECHNICAL_SUPPORT
             )
-            BuildingAssignment.objects.create(building=building, user=users[Role.FIELD_SPECIALIST])
-            for n in range(1, (building.entrances or 0) + 1):
-                entrance = BuildingElement.objects.create(
-                    building=building, element_type_id="entrance", name=f"Подъезд №{n}"
-                )
-                BuildingElement.objects.create(
-                    building=building,
-                    parent=entrance,
-                    element_type_id="roof",
-                    name=f"Кровля над подъездом №{n}",
-                )
-            for code in ("facade", "basement", "heating", "electrical"):
-                BuildingElement.objects.create(
-                    building=building,
-                    element_type_id=code,
-                    name=ElementType.objects.get(pk=code).name,
-                )
-
-        template, _ = ChecklistTemplate.objects.get_or_create(
-            organization=provider, name="Регулярный визуальный осмотр МКД"
-        )
-        if not template.versions.exists():
-            version = ChecklistTemplateVersion.objects.create(template=template, number=1)
-            for i, (etype, code, text, atype, unit) in enumerate(ITEMS):
-                ChecklistItem.objects.create(
-                    version=version,
-                    element_type_id=etype,
-                    code=code,
-                    text=text,
-                    answer_type=atype,
-                    unit=unit,
-                    sort_order=i,
-                )
-            version.status = ChecklistTemplateVersion.Status.PUBLISHED
-            version.save()
+            self._approved_inspection(b1, provider)
+            self._submitted_inspection(b2, provider)
+            self._scheduled_inspection(b3, provider)
 
         self.stdout.write(
             self.style.SUCCESS(f"Demo data ready. Password for all users: {PASSWORD}")
         )
 
-    def _user(self, email, name, org, role):
+    # --- organizations / users -------------------------------------------------------------
+
+    def _user(self, email, name, position, org, role):
         user = User.objects.filter(email=email).first()
         if user is None:
-            user = User.objects.create_user(email=email, password=PASSWORD, full_name=name)
+            user = User.objects.create_user(
+                email=email, password=PASSWORD, full_name=name, position=position
+            )
         OrganizationMembership.objects.get_or_create(user=user, organization=org, role=role)
         return user
+
+    def _checklist(self, provider):
+        template, _ = ChecklistTemplate.objects.get_or_create(
+            organization=provider, name="Регулярный визуальный осмотр МКД"
+        )
+        version = template.versions.filter(status=ChecklistTemplateVersion.Status.PUBLISHED).first()
+        if version:
+            return version
+        version = ChecklistTemplateVersion.objects.create(
+            template=template, number=1, approved_by_note="ДЕМО · не утверждённая методика"
+        )
+        for i, (etype, code, text, atype, unit) in enumerate(ITEMS):
+            ChecklistItem.objects.create(
+                version=version,
+                element_type_id=etype,
+                code=code,
+                text=text,
+                answer_type=atype,
+                unit=unit,
+                sort_order=i,
+                photo_required_on_fail=False,
+            )
+        version.status = ChecklistTemplateVersion.Status.PUBLISHED
+        version.published_at = timezone.now()
+        version.save()
+        return version
+
+    # --- buildings ------------------------------------------------------------------------
+
+    def _building(self, row, provider):
+        code, address, year, floors, entrances, apartments, area, scheme = row
+        b = Building.objects.create(
+            internal_code=code,
+            name="ДЕМО · многоквартирный жилой дом",
+            address=address,
+            year_built=year,
+            floors=floors,
+            entrances=entrances,
+            apartments=apartments,
+            total_area_m2=area.replace(" ", "") if area else None,
+            structural_scheme=scheme,
+            field_sources={
+                "floors": {
+                    "source": "ДЕМО · технический паспорт",
+                    "recorded_at": at(90).isoformat(),
+                    "by": "",
+                },
+            },
+            created_by=self.users[Role.PROVIDER_ADMIN],
+        )
+        BuildingOrganizationLink.objects.create(
+            building=b, organization=provider, function=LinkFunction.TECHNICAL_SUPPORT
+        )
+        BuildingAssignment.objects.create(building=b, user=self.users[Role.FIELD_SPECIALIST])
+
+        b.el = {}
+        for n in range(1, entrances + 1):
+            entrance = BuildingElement.objects.create(
+                building=b, element_type_id="entrance", name=f"Подъезд №{n}"
+            )
+            for etype, label in (("roof", "Кровля"), ("facade", "Фасад"), ("basement", "Подвал")):
+                b.el[(etype, n)] = BuildingElement.objects.create(
+                    building=b,
+                    parent=entrance,
+                    element_type_id=etype,
+                    name=f"{label} · подъезд №{n}",
+                )
+        for etype, label in (
+            ("heating", "Система отопления"),
+            ("water", "Водоснабжение"),
+            ("electrical", "Электроснабжение (ВРУ)"),
+            ("elevators", "Лифтовое оборудование"),
+        ):
+            b.el[(etype, 0)] = BuildingElement.objects.create(
+                building=b, element_type_id=etype, name=label
+            )
+        return b
+
+    # --- inspections ----------------------------------------------------------------------
+
+    def _inspection(self, building, provider, number, status, **extra):
+        return Inspection.objects.create(
+            building=building,
+            provider_organization=provider,
+            template_version=self.version,
+            number=number,
+            assignee=self.users[Role.FIELD_SPECIALIST],
+            status=status,
+            scope_and_limitations=(
+                "Визуальный осмотр доступных конструкций с земли, кровли и из подвала. "
+                "Квартиры и закрытые технические помещения не обследовались."
+            ),
+            created_by=self.users[Role.REVIEWING_ENGINEER],
+            **extra,
+        )
+
+    def _answers(self, inspection, failing: set[str]):
+        for item in self.version.items.all():
+            if item.answer_type == AnswerType.COMPLIANCE:
+                value = ComplianceValue.FAIL if item.code in failing else ComplianceValue.OK
+                InspectionAnswer.objects.create(
+                    inspection=inspection,
+                    item=item,
+                    compliance=value,
+                    answered_by=inspection.assignee,
+                )
+            elif item.answer_type == AnswerType.NUMBER:
+                InspectionAnswer.objects.create(
+                    inspection=inspection,
+                    item=item,
+                    number_value="6.5",
+                    answered_by=inspection.assignee,
+                )
+            else:
+                InspectionAnswer.objects.create(
+                    inspection=inspection,
+                    item=item,
+                    text_value="Щиты в удовлетворительном состоянии, маркировка частично утрачена.",
+                    answered_by=inspection.assignee,
+                )
+
+    def _approved_inspection(self, b, provider):
+        engineer = self.users[Role.REVIEWING_ENGINEER]
+        insp = self._inspection(
+            b,
+            provider,
+            "INS-2026-0001",
+            InspectionStatus.APPROVED,
+            planned_date=days_ago(70),
+            performed_at=at(68),
+            submitted_at=at(66),
+            approved_at=at(60),
+            approved_by=engineer,
+            reviewer=engineer,
+            published_at=at(59),
+            published_by=engineer,
+            summary="Выявлены дефекты кровли, фасада и системы отопления. Требуется плановый ремонт.",
+        )
+        self._answers(insp, {"КР-01", "ФС-01", "ФС-02", "ПД-01", "ПД-02", "ОТ-01"})
+        InspectionReview.objects.create(
+            inspection=insp,
+            reviewer=engineer,
+            decision=InspectionReview.Decision.APPROVED,
+            comment="Данные полные, категории риска подтверждены.",
+        )
+
+        specs = [
+            # element, type, description, location, preliminary, risk, status, detected, wo
+            (
+                ("heating", 0),
+                "Коррозия трубопровода отопления",
+                "Сквозная коррозия участка подающего трубопровода, следы подтёков на изоляции.",
+                "Подвал, узел ввода, ось 3–4",
+                "R2",
+                "R1",
+                DefectStatus.FIXING,
+                68,
+                (
+                    "Замена участка трубопровода Ду 50",
+                    Priority.URGENT,
+                    WorkOrderStatus.IN_PROGRESS,
+                    -12,
+                ),
+            ),
+            (
+                ("roof", 2),
+                "Протечка кровли",
+                "Следы протечки на потолке лестничной клетки 9 этажа, вздутие рулонного покрытия.",
+                "Над кв. 34–36",
+                "R2",
+                "R2",
+                DefectStatus.PLANNED,
+                68,
+                ("Локальный ремонт рулонной кровли", Priority.HIGH, WorkOrderStatus.SCHEDULED, 21),
+            ),
+            (
+                ("basement", 1),
+                "Подтопление подвала",
+                "Стоячая вода в приямке, следы замачивания нижней части стен.",
+                "Технический подвал, секция 1",
+                "R3",
+                "R2",
+                DefectStatus.FIX_REVIEW,
+                67,
+                ("Ремонт дренажного приямка и откачка", Priority.HIGH, WorkOrderStatus.DONE, -5),
+            ),
+            (
+                ("facade", 3),
+                "Раскрытие межпанельного шва",
+                "Раскрытие вертикального шва до 5 мм на высоту 3 этажей, следы промерзания.",
+                "Ось Б, 4–6 этаж",
+                "R3",
+                "R3",
+                DefectStatus.CONFIRMED,
+                66,
+                ("Герметизация межпанельных швов", Priority.NORMAL, WorkOrderStatus.PROPOSED, None),
+            ),
+            (
+                ("facade", 4),
+                "Отслоение защитного слоя балконной плиты",
+                "Оголение арматуры на торце балконной плиты, отслоение бетона.",
+                "Балкон кв. 112",
+                "R2",
+                "R3",
+                DefectStatus.CONFIRMED,
+                66,
+                None,
+            ),
+            (
+                ("basement", 2),
+                "Разрушение отмостки",
+                "Трещины и просадка отмостки на участке 6 м, зазор у цоколя.",
+                "Дворовый фасад, у подъезда №2",
+                "R4",
+                "R4",
+                DefectStatus.CLOSED,
+                120,
+                ("Восстановление отмостки", Priority.LOW, WorkOrderStatus.CLOSED, -40),
+            ),
+        ]
+        for i, spec in enumerate(specs, start=1):
+            self._defect(b, insp, i, *spec)
+
+    def _defect(
+        self, b, insp, i, el_key, dtype, desc, location, prelim, risk, status, detected, wo
+    ):
+        field = self.users[Role.FIELD_SPECIALIST]
+        engineer = self.users[Role.REVIEWING_ENGINEER]
+        d = Defect.objects.create(
+            number=f"DEF-2026-{i:04d}",
+            building=b,
+            element=b.el[el_key],
+            location=location,
+            inspection=insp,
+            defect_type=dtype,
+            description=desc,
+            detected_on=days_ago(detected),
+            preliminary_severity=prelim,
+            status=status,
+            created_by=field,
+            recommendations="",
+        )
+        ra = RiskAssessment.objects.create(
+            defect=d,
+            category=risk,
+            engineer=engineer,
+            hazard_description=f"{dtype}: возможное развитие повреждения при отсутствии ремонта.",
+            justification="Экспертная оценка по результатам визуального осмотра и фотофиксации.",
+            recommended_actions="Выполнить ремонт в рекомендованный срок, после ремонта — контрольный осмотр.",
+        )
+        d.current_risk = ra
+        d.recommendations = ra.recommended_actions
+        if status == DefectStatus.CLOSED:
+            d.closed_at = at(30)
+            d.closed_by = engineer
+            d.closure_basis = "ДЕМО · устранение проверено на месте"
+        d.save()
+
+        path = [DefectStatus.DETECTED, DefectStatus.IN_REVIEW, DefectStatus.CONFIRMED]
+        tail = {
+            DefectStatus.PLANNED: [DefectStatus.PLANNED],
+            DefectStatus.FIXING: [DefectStatus.PLANNED, DefectStatus.FIXING],
+            DefectStatus.FIX_REVIEW: [
+                DefectStatus.PLANNED,
+                DefectStatus.FIXING,
+                DefectStatus.FIX_REVIEW,
+            ],
+            DefectStatus.CLOSED: [
+                DefectStatus.PLANNED,
+                DefectStatus.FIXING,
+                DefectStatus.FIX_REVIEW,
+                DefectStatus.CLOSED,
+            ],
+        }.get(status, [])
+        prev = ""
+        for step, st in enumerate(path[1:] + tail):
+            ev = DefectEvent.objects.create(
+                defect=d,
+                from_status=prev or DefectStatus.DETECTED,
+                to_status=st,
+                actor=engineer if st != DefectStatus.IN_REVIEW else field,
+            )
+            DefectEvent.objects.filter(pk=ev.pk).update(
+                created_at=at(max(detected - 2 - step * 6, 1))
+            )
+            prev = st
+        Defect.objects.filter(pk=d.pk).update(created_at=at(detected))
+
+        if i == 2:  # repeated observations show the defect getting worse (AC-17)
+            for n, (text, trend) in enumerate(
+                [
+                    ("Пятно протечки около 0,5 м²", "same"),
+                    ("Площадь пятна выросла до 1,2 м²", "worse"),
+                ]
+            ):
+                DefectObservation.objects.create(
+                    defect=d,
+                    observed_on=days_ago(68 - n * 30),
+                    description=text,
+                    trend=trend,
+                    observer=field,
+                )
+
+        if wo:
+            self._work_order(b, d, i, *wo)
+
+    def _work_order(self, b, defect, i, title, priority, status, planned_offset):
+        engineer = self.users[Role.REVIEWING_ENGINEER]
+        today = timezone.localdate()
+        wo = WorkOrder.objects.create(
+            number=f"WO-2026-{i:04d}",
+            building=b,
+            defect=defect,
+            element=defect.element,
+            title=title,
+            priority=priority,
+            status=status,
+            recommended_date=today + timedelta(days=(planned_offset or 30) - 7),
+            planned_date=(today + timedelta(days=planned_offset))
+            if planned_offset is not None
+            else None,
+            responsible_name="ДЕМО · подрядная организация",
+            created_by=engineer,
+        )
+        chain = [
+            WorkOrderStatus.AGREED,
+            WorkOrderStatus.SCHEDULED,
+            WorkOrderStatus.IN_PROGRESS,
+            WorkOrderStatus.DONE,
+            WorkOrderStatus.VERIFIED,
+            WorkOrderStatus.CLOSED,
+        ]
+        steps = chain[: chain.index(status) + 1] if status in chain else []
+        prev = WorkOrderStatus.PROPOSED
+        for n, st in enumerate(steps):
+            actor = self.osi_user if st == WorkOrderStatus.AGREED else engineer
+            ev = WorkOrderEvent.objects.create(
+                work_order=wo,
+                from_status=prev,
+                to_status=st,
+                actor=actor,
+                actor_role="osi_representative" if actor == self.osi_user else "reviewing_engineer",
+            )
+            WorkOrderEvent.objects.filter(pk=ev.pk).update(created_at=at(55 - n * 8))
+            prev = st
+        WorkOrder.objects.filter(pk=wo.pk).update(created_at=at(58))
+
+    def _submitted_inspection(self, b, provider):
+        insp = self._inspection(
+            b,
+            provider,
+            "INS-2026-0002",
+            InspectionStatus.SUBMITTED,
+            planned_date=days_ago(6),
+            performed_at=at(5),
+            submitted_at=at(3),
+        )
+        self._answers(insp, {"КР-03", "ВС-01"})
+        field = self.users[Role.FIELD_SPECIALIST]
+        for n, (key, dtype, desc, prelim) in enumerate(
+            [
+                (
+                    ("roof", 1),
+                    "Разрушение водосточной воронки",
+                    "Воронка внутреннего водостока смещена, вода уходит под покрытие.",
+                    "R3",
+                ),
+                (
+                    ("water", 0),
+                    "Течь запорной арматуры",
+                    "Капельная течь задвижки на вводе ХВС.",
+                    "R4",
+                ),
+            ],
+            start=7,
+        ):
+            Defect.objects.create(
+                number=f"DEF-2026-{n:04d}",
+                building=b,
+                element=b.el[key],
+                inspection=insp,
+                defect_type=dtype,
+                description=desc,
+                detected_on=days_ago(5),
+                preliminary_severity=prelim,
+                status=DefectStatus.IN_REVIEW,
+                created_by=field,
+            )
+
+    def _scheduled_inspection(self, b, provider):
+        self._inspection(
+            b, provider, "INS-2026-0003", InspectionStatus.DRAFT, planned_date=days_ago(-9)
+        )

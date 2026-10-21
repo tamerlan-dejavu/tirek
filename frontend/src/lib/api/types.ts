@@ -112,6 +112,11 @@ export interface Defect {
   building_address: string;
   element: UUID;
   element_path: string[];
+  element_type: string;
+  element_group: "structural" | "engineering" | "operational" | "location";
+  inspection: UUID | null;
+  inspection_number: string | null;
+  author_name: string | null;
   location: string;
   defect_type: string;
   description: string;
@@ -120,6 +125,9 @@ export interface Defect {
   approved_risk: RiskCategory | null;
   status: DefectStatus;
   recommendations: string;
+  closure_basis: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export type WorkOrderStatus =
@@ -147,7 +155,11 @@ export interface WorkOrder {
   recommended_date: string | null;
   planned_date: string | null;
   status: WorkOrderStatus;
+  status_reason: string;
+  responsible_name: string;
+  description: string;
   author_name: string | null;
+  completed_at: string | null;
   created_at: string;
 }
 
@@ -164,10 +176,34 @@ export interface Dashboard {
   buildings: number;
   inspections_total: number;
   inspections_awaiting_review: number;
+  inspections_scheduled: number;
   defects_open: number;
   defects_r1: number;
   defects_r2: number;
+  defects_pending_verification: number;
   work_orders_due_soon: number;
   work_orders_overdue: number;
   work_orders_completed: number;
+  generated_at: string;
+}
+
+export interface Breakdown {
+  open_by_risk: Record<RiskCategory | "unassessed", number>;
+  open_by_group: Record<string, number>;
+  open_by_element_type: Record<string, number>;
+  by_status: Partial<Record<DefectStatus, number>>;
+  work_orders_by_status: Partial<Record<WorkOrderStatus, number>>;
+  monthly: { month: string; detected: number; closed: number }[];
+}
+
+export interface ActivityItem {
+  id: UUID;
+  kind: "defect" | "work_order";
+  object_id: UUID;
+  object_number: string;
+  title: string;
+  to_status: string;
+  actor: string;
+  comment: string;
+  at: string;
 }

@@ -1,4 +1,5 @@
-from django.db.models import Q
+from django.db.models import Q, Value
+from django.db.models.functions import Coalesce
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -32,11 +33,19 @@ CUSTOMER_VISIBLE = [
 
 
 class DefectViewSet(BuildingScopedViewSet):
-    queryset = Defect.objects.select_related("building", "element", "current_risk")
+    queryset = Defect.objects.select_related(
+        "building",
+        "element__element_type",
+        "element__parent",
+        "current_risk",
+        "inspection",
+        "created_by",
+    )
     serializer_class = DefectSerializer
     filterset_class = DefectFilter
     search_fields = ["number", "building__address", "description", "defect_type", "location"]
-    ordering_fields = ["created_at", "detected_on", "current_risk__category"]
+    # risk_order: R1…R4 first, unassessed (preliminary only) after them
+    ordering_fields = ["created_at", "detected_on", "current_risk__category", "risk_order"]
     create_roles = FIELD
     update_roles = FIELD
 
@@ -45,11 +54,12 @@ class DefectViewSet(BuildingScopedViewSet):
         provider_buildings = access.accessible_building_ids(
             self.request.user, roles=access.PROVIDER_ROLES
         )
-        return qs.filter(building__in=provider_buildings) | qs.filter(
+        visible = qs.filter(building__in=provider_buildings) | qs.filter(
             Q(inspection__isnull=True) | Q(inspection__published_at__isnull=False),
             status__in=CUSTOMER_VISIBLE,
             current_risk__isnull=False,
         )
+        return visible.annotate(risk_order=Coalesce("current_risk__category", Value("R9")))
 
     def perform_create(self, serializer):
         access.require(self.request.user, serializer.validated_data["building"].pk, *FIELD)

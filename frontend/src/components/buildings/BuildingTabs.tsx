@@ -20,8 +20,8 @@ export function BuildingTabs({ id }: { id: string }) {
   const pathname = usePathname();
   const base = `/buildings/${id}`;
   return (
-    <nav aria-label="Разделы здания" className="mb-6 flex gap-1 overflow-x-auto border-b border-line">
-      {TABS.map((t) => {
+    <nav aria-label="Разделы здания" className="-mb-px flex gap-1 overflow-x-auto">
+      {TABS.map((t, i) => {
         const href = t.slug ? `${base}/${t.slug}` : base;
         const active = pathname === href;
         return (
@@ -30,10 +30,11 @@ export function BuildingTabs({ id }: { id: string }) {
             href={href}
             aria-current={active ? "page" : undefined}
             className={clsx(
-              "-mb-px whitespace-nowrap border-b-2 px-3 py-2 text-sm",
-              active ? "border-accent font-medium text-accent" : "border-transparent text-ink-muted hover:text-ink",
+              "flex items-center gap-2 border-b-2 px-2.5 py-3 text-[13.5px] whitespace-nowrap transition-colors",
+              active ? "border-teal font-medium text-ink" : "border-transparent text-muted hover:text-ink",
             )}
           >
+            <span className={clsx("font-mono text-[10px]", active ? "text-teal-strong" : "text-faint")}>{String(i + 1).padStart(2, "0")}</span>
             {t.label}
           </Link>
         );

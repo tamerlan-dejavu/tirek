@@ -1,71 +1,189 @@
 @import "tailwindcss";
 
 /*
- * Tirek design tokens — "Architectural Intelligence / Precision Engineering" (ТЗ 11).
- * Two modes: light functional surfaces for the platform, deep dark surfaces for the public site.
- * Final values come from the approved UI-kit (ТЗ 11.9); these are placeholders with AA contrast.
+ * TIREK DESIGN TOKENS — "Architectural Intelligence / Precision Engineering"
+ * Spec: docs/design-system.md. Every color pair used for text meets WCAG AA (4.5:1).
+ * Base hues come from the brand brief; "-ink" variants are darkened for text on light surfaces.
  */
 @theme {
-  --font-sans: "Inter", "Segoe UI", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", "Consolas", ui-monospace, monospace;
+  /* Typography */
+  --font-sans: "Inter Variable", "Inter", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", "JetBrains Mono", ui-monospace, monospace;
 
-  --color-canvas: #f6f7f9;
+  /* Brand */
+  --color-navy: #101d2c; /* deep architectural navy — navigation, public surfaces */
+  --color-navy-2: #16273a; /* raised navy */
+  --color-steel: #213d51; /* structural steel blue — secondary dark surfaces */
+  --color-steel-2: #2c4f68;
+  --color-teal: #20a6a6; /* engineering teal — accents, focus, markers (not for text on light) */
+  --color-teal-strong: #147a7a; /* teal for text and filled buttons on light (5.1:1) */
+  --color-teal-soft: #e3f3f3;
+
+  /* Neutrals */
+  --color-canvas: #f8fafb; /* working background */
   --color-surface: #ffffff;
-  --color-line: #d9dee5;
-  --color-ink: #141a22;
-  --color-ink-muted: #556070;
-  --color-accent: #1f4fd1;
-  --color-accent-ink: #ffffff;
+  --color-mist: #e9eef1; /* secondary surfaces, separators */
+  --color-line: #dbe2e7; /* hairlines */
+  --color-line-strong: #c3ced6;
+  --color-ink: #192d3d; /* primary text */
+  --color-muted: #647682; /* metadata (4.7:1 on white) */
+  --color-faint: #8a99a4; /* decorative only, never body text */
 
-  /* Risk — always paired with a text label */
-  --color-risk-r1: #b42318;
-  --color-risk-r2: #c4590a;
-  --color-risk-r3: #8a6a00;
-  --color-risk-r4: #2f6b45;
+  /* Semantic — base for fills/markers, -ink for text */
+  --color-critical: #b94e4e;
+  --color-critical-ink: #a23d3d;
+  --color-critical-soft: #f8eaea;
+  --color-warning: #c58b35;
+  --color-warning-ink: #8a5f1f;
+  --color-warning-soft: #f8f0e3;
+  --color-healthy: #27866e;
+  --color-healthy-ink: #1f6c59;
+  --color-healthy-soft: #e5f2ee;
+  --color-info: #258d96;
+  --color-info-ink: #1c6f77;
+  --color-info-soft: #e4f2f3;
+  --color-unknown: #7c8893;
+  --color-unknown-ink: #5b6772;
+  --color-unknown-soft: #eef1f3;
 
-  --color-approved: #1d5c3a;
-  --color-preliminary: #8a5a00;
+  /* Risk scale R1–R4 (expert category, independent from workflow status) */
+  --color-r1: #b94e4e;
+  --color-r2: #c58b35;
+  --color-r3: #4f7690;
+  --color-r4: #7c8893;
 
-  /* Public (dark) surface */
-  --color-night: #0a0e14;
-  --color-night-2: #121822;
-  --color-blueprint: #3d6bff;
+  /* Geometry — engineered, not soft */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+
+  --shadow-hairline: 0 1px 0 rgb(16 29 44 / 0.04);
+  --shadow-panel: 0 1px 2px rgb(16 29 44 / 0.05), 0 0 0 1px rgb(16 29 44 / 0.02);
+  --shadow-overlay: 0 12px 32px -8px rgb(16 29 44 / 0.24);
+
+  /* Motion */
+  --ease-precise: cubic-bezier(0.2, 0, 0, 1);
+  --duration-fast: 150ms;
+  --duration-base: 220ms;
+  --duration-slow: 320ms;
+
+  --animate-draw: draw 2.4s var(--ease-precise) forwards;
+  --animate-fade-up: fade-up 600ms var(--ease-precise) both;
+
+  @keyframes draw {
+    from {
+      stroke-dashoffset: var(--len, 1200);
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
 }
 
 @layer base {
   html {
     color-scheme: light;
+    -webkit-text-size-adjust: 100%;
   }
   body {
-    @apply bg-canvas text-ink antialiased;
+    background: var(--color-canvas);
+    color: var(--color-ink);
     font-family: var(--font-sans);
+    font-feature-settings: "cv11", "ss01"; /* Inter: straight-sided digits, open forms */
+    -webkit-font-smoothing: antialiased;
   }
   :focus-visible {
-    outline: 2px solid var(--color-accent);
+    outline: 2px solid var(--color-teal);
     outline-offset: 2px;
+    border-radius: var(--radius-xs);
+  }
+  ::selection {
+    background: rgb(32 166 166 / 0.22);
   }
 }
 
+/* Numbers in metrics and tables line up */
 @utility tabular {
   font-variant-numeric: tabular-nums;
 }
 
-@utility surface-dark {
-  background: var(--color-night);
-  color: #e7ecf3;
-  color-scheme: dark;
+/* Uppercase technical label: "INSPECTION ID", "02 / ДЕФЕКТЫ" */
+@utility label-tech {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-muted);
 }
 
-@utility blueprint-grid {
+/* Fine construction grid — used sparingly behind schematics and the public site */
+@utility grid-blueprint {
   background-image:
-    linear-gradient(to right, rgb(61 107 255 / 0.08) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(61 107 255 / 0.08) 1px, transparent 1px);
-  background-size: 32px 32px;
+    linear-gradient(to right, rgb(32 166 166 / 0.07) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(32 166 166 / 0.07) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+@utility grid-blueprint-light {
+  background-image:
+    linear-gradient(to right, rgb(25 45 61 / 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(25 45 61 / 0.045) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Registration marks on panel corners — the drawing-sheet signature of the system */
+@utility registration {
+  position: relative;
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    width: 7px;
+    height: 7px;
+    pointer-events: none;
+    border-color: var(--color-line-strong);
+  }
+  &::before {
+    top: -1px;
+    left: -1px;
+    border-top: 1px solid;
+    border-left: 1px solid;
+  }
+  &::after {
+    bottom: -1px;
+    right: -1px;
+    border-bottom: 1px solid;
+    border-right: 1px solid;
+  }
+}
+
+.draw-path {
+  stroke-dasharray: var(--len, 1200);
+  stroke-dashoffset: var(--len, 1200);
+  animation: var(--animate-draw);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  * {
-    animation: none !important;
-    transition: none !important;
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+  .draw-path {
+    stroke-dashoffset: 0;
   }
 }

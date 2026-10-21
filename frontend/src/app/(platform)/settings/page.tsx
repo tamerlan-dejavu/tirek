@@ -23,8 +23,8 @@ export default function SettingsPage() {
           <QueryState query={me}>
             {(u) => (
               <dl className="text-sm">
-                <dt className="text-ink-muted">Email</dt><dd className="mb-2">{u.email}</dd>
-                <dt className="text-ink-muted">Роли</dt>
+                <dt className="text-muted">Email</dt><dd className="mb-2">{u.email}</dd>
+                <dt className="text-muted">Роли</dt>
                 <dd>{u.memberships.map((m) => <div key={m.id}>{m.organization_name} · {m.role}</div>)}</dd>
               </dl>
             )}
@@ -37,7 +37,7 @@ export default function SettingsPage() {
                 {list.map((s) => (
                   <li key={s.id} className="py-1.5">
                     <div className="truncate">{s.user_agent || "неизвестное устройство"}</div>
-                    <div className="text-xs text-ink-muted">{s.ip_address} · {formatDate(s.last_seen_at)}{s.is_current && " · текущая"}</div>
+                    <div className="text-xs text-muted">{s.ip_address} · {formatDate(s.last_seen_at)}{s.is_current && " · текущая"}</div>
                   </li>
                 ))}
               </ul>
@@ -50,7 +50,7 @@ export default function SettingsPage() {
             {(d) => (
               <ul className="divide-y divide-line text-sm">
                 {d.results.map((n) => (
-                  <li key={n.id} className={n.read_at ? "py-2 text-ink-muted" : "py-2"}>
+                  <li key={n.id} className={n.read_at ? "py-2 text-muted" : "py-2"}>
                     <b>{n.title}</b> · {formatDate(n.created_at)}<div>{n.body}</div>
                   </li>
                 ))}

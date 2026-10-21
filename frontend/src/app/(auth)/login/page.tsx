@@ -39,17 +39,30 @@ function LoginForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
-      <h1 className="text-xl font-semibold">Вход</h1>
+    <form onSubmit={onSubmit} className="space-y-5">
+      <div>
+        <div className="label-tech mb-2">Платформа инженерного сопровождения</div>
+        <h1 className="text-[28px] font-semibold tracking-[-0.02em]">Вход в Tirek</h1>
+        <p className="mt-1.5 text-sm text-muted">Доступ выдаёт администратор вашей организации по приглашению.</p>
+      </div>
       <Field label="Email" name="email" type="email" autoComplete="username" required />
       <Field label="Пароль" name="password" type="password" autoComplete="current-password" required />
-      {error && <p role="alert" className="text-sm text-risk-r1">{error}</p>}
-      <Button type="submit" className="w-full" disabled={pending}>
-        {pending ? "Вход…" : "Войти"}
+      {error && (
+        <p role="alert" className="rounded-md bg-critical-soft px-3 py-2 text-sm text-critical-ink">
+          {error}
+        </p>
+      )}
+      <Button type="submit" size="lg" className="w-full" disabled={pending}>
+        {pending ? "Проверка…" : "Войти"}
       </Button>
-      <Link href="/reset-password" className="block text-center text-sm text-ink-muted hover:text-ink">
-        Забыли пароль?
-      </Link>
+      <div className="flex items-center justify-between border-t border-line pt-4 text-sm">
+        <Link href="/reset-password" className="text-teal-strong hover:underline">
+          Забыли пароль?
+        </Link>
+        <Link href="/" className="text-muted hover:text-ink">
+          О платформе
+        </Link>
+      </div>
     </form>
   );
 }
