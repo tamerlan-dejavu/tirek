@@ -1,14 +1,54 @@
-import type { ReactNode } from "react";
+"use client";
 
+import { X } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { useEffect, useState, type ReactNode } from "react";
+
+import { useMe } from "@/lib/api/hooks";
+import { isCustomerOnly } from "@/lib/permissions";
+
+import { OSI_NAV, Sidebar, type NavGroup } from "./Sidebar";
 import { Topbar } from "./Topbar";
 
-export function Shell({ sidebar, children }: { sidebar: ReactNode; children: ReactNode }) {
+/**
+ * Application frame: dark navigation rail (desktop) / drawer (tablet, phone),
+ * light working canvas. The navy rail and the light sheet are the two surfaces of the system.
+ */
+export function Shell({ nav: navProp, children }: { nav: NavGroup[]; children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+  const { data: me } = useMe();
+  // Shared pages (e.g. settings) must not show provider navigation to a customer
+  const nav = isCustomerOnly(me) ? OSI_NAV : navProp;
+  useEffect(() => setOpen(false), [pathname]);
+
   return (
-    <div className="min-h-dvh md:grid md:grid-cols-[240px_1fr]">
-      <aside className="hidden border-r border-line bg-surface md:block">{sidebar}</aside>
+    <div className="min-h-dvh lg:grid lg:grid-cols-[248px_minmax(0,1fr)]">
+      <aside className="sticky top-0 hidden h-dvh lg:block">
+        <Sidebar groups={nav} />
+      </aside>
+
+      {open && (
+        <div className="fixed inset-0 z-40 lg:hidden" role="dialog" aria-modal="true" aria-label="Меню">
+          <button className="absolute inset-0 bg-navy/50" aria-label="Закрыть меню" onClick={() => setOpen(false)} />
+          <div className="relative h-full w-[280px] max-w-[85vw] animate-[fade-up_200ms_var(--ease-precise)] shadow-[var(--shadow-overlay)]">
+            <Sidebar groups={nav} onNavigate={() => setOpen(false)} />
+            <button
+              onClick={() => setOpen(false)}
+              className="absolute top-3 right-3 grid size-8 place-items-center rounded-md text-white/70 hover:bg-white/10"
+              aria-label="Закрыть меню"
+            >
+              <X className="size-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="flex min-w-0 flex-col">
-        <Topbar />
-        <main className="mx-auto w-full max-w-7xl flex-1 p-4 md:p-6">{children}</main>
+        <Topbar onMenu={() => setOpen(true)} />
+        <main id="main" className="mx-auto w-full max-w-[1440px] flex-1 px-4 py-6 md:px-6 lg:px-8 lg:py-8">
+          {children}
+        </main>
       </div>
     </div>
   );
