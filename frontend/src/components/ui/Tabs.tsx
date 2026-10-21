@@ -51,7 +51,7 @@ export function Chip({
       onClick={onClick}
       className={clsx(
         "inline-flex h-8 items-center gap-1.5 rounded-md border px-2.5 text-[13px] transition-colors",
-        active ? "border-teal-strong bg-teal-soft text-teal-strong" : "border-line bg-surface text-ink hover:border-line-strong",
+        active ? "border-accent-strong bg-accent-soft text-accent-strong" : "border-line bg-surface text-ink hover:border-line-strong",
       )}
     >
       {children}

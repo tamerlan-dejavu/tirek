@@ -11,8 +11,8 @@ import { OSI_NAV, Sidebar, type NavGroup } from "./Sidebar";
 import { Topbar } from "./Topbar";
 
 /**
- * Application frame: dark navigation rail (desktop) / drawer (tablet, phone),
- * light working canvas. The navy rail and the light sheet are the two surfaces of the system.
+ * Application frame: navigation rail (desktop) / drawer (tablet, phone) and the working canvas,
+ * separated by a 1px line on the same graphite background.
  */
 export function Shell({ nav: navProp, children }: { nav: NavGroup[]; children: ReactNode }) {
   const [open, setOpen] = useState(false);
@@ -30,12 +30,12 @@ export function Shell({ nav: navProp, children }: { nav: NavGroup[]; children: R
 
       {open && (
         <div className="fixed inset-0 z-40 lg:hidden" role="dialog" aria-modal="true" aria-label="Меню">
-          <button className="absolute inset-0 bg-navy/50" aria-label="Закрыть меню" onClick={() => setOpen(false)} />
+          <button className="absolute inset-0 bg-black/60" aria-label="Закрыть меню" onClick={() => setOpen(false)} />
           <div className="relative h-full w-[280px] max-w-[85vw] animate-[fade-up_200ms_var(--ease-precise)] shadow-[var(--shadow-overlay)]">
             <Sidebar groups={nav} onNavigate={() => setOpen(false)} />
             <button
               onClick={() => setOpen(false)}
-              className="absolute top-3 right-3 grid size-8 place-items-center rounded-md text-white/70 hover:bg-white/10"
+              className="absolute top-3 right-3 grid size-8 place-items-center rounded-md text-muted hover:bg-mist hover:text-ink"
               aria-label="Закрыть меню"
             >
               <X className="size-4" />

@@ -13,7 +13,7 @@ import { RISK, type Tone } from "@/lib/status";
 const RISK_STYLE: Record<RiskCategory, { text: string; seg: string; icon: typeof Circle }> = {
   R1: { text: "text-critical-ink", seg: "bg-r1", icon: OctagonAlert },
   R2: { text: "text-warning-ink", seg: "bg-r2", icon: TriangleAlert },
-  R3: { text: "text-[#3d5e74]", seg: "bg-r3", icon: Diamond },
+  R3: { text: "text-info-ink", seg: "bg-r3", icon: Diamond },
   R4: { text: "text-unknown-ink", seg: "bg-r4", icon: Circle },
 };
 
@@ -79,13 +79,13 @@ const DOT: Record<Tone, string> = {
   warning: "bg-warning",
   healthy: "bg-healthy",
   info: "bg-info",
-  accent: "bg-teal",
+  accent: "bg-accent",
   neutral: "bg-unknown",
 };
 
 export function StatusBadge({ label, tone = "neutral" }: { label: string; tone?: Tone }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-2 py-0.5 text-xs whitespace-nowrap text-ink">
+    <span className="inline-flex items-center gap-1.5 rounded-sm border border-line bg-surface px-2 py-0.5 text-xs whitespace-nowrap text-ink">
       <span aria-hidden className={clsx("size-1.5 rounded-full", DOT[tone])} />
       {label}
     </span>
@@ -95,12 +95,12 @@ export function StatusBadge({ label, tone = "neutral" }: { label: string; tone?:
 /** Approved engineering conclusion vs preliminary observation (ТЗ 9.7, 11.6). */
 export function ApprovalTag({ approved, children }: { approved: boolean; children?: ReactNode }) {
   return approved ? (
-    <span className="inline-flex items-center gap-1 rounded-sm bg-healthy-soft px-1.5 py-0.5 text-xs font-medium text-healthy-ink">
+    <span className="inline-flex items-center gap-1 rounded-sm bg-healthy-soft px-1.5 py-0.5 text-xs font-medium whitespace-nowrap text-healthy-ink">
       <Check aria-hidden className="size-3" strokeWidth={2.5} />
       {children ?? "Утверждено"}
     </span>
   ) : (
-    <span className="inline-flex items-center gap-1 rounded-sm border border-dashed border-warning px-1.5 py-0.5 text-xs font-medium text-warning-ink">
+    <span className="inline-flex items-center gap-1 rounded-sm border border-dashed border-warning px-1.5 py-0.5 text-xs font-medium whitespace-nowrap text-warning-ink">
       {children ?? "Предварительно"}
     </span>
   );
