@@ -33,9 +33,9 @@ export default function PassportPage({ params }: { params: Promise<{ id: string 
               const source = b.field_sources[key as string];
               return (
                 <div key={key} className="grid gap-1 py-2 md:grid-cols-[260px_1fr_auto]">
-                  <dt className="text-ink-muted">{label}</dt>
+                  <dt className="text-muted">{label}</dt>
                   <dd className="font-mono tabular">{orUnknown(b[key])}</dd>
-                  <dd className="text-xs text-ink-muted">
+                  <dd className="text-xs text-muted">
                     {source ? `${source.source || "источник не указан"} · ${formatDate(source.recorded_at)}` : ""}
                   </dd>
                 </div>
