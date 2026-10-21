@@ -1,0 +1,126 @@
+{% load report_tags %}<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Отчёт {{ s.inspection.number }} · v{{ report.version }}</title>
+<style>
+  @page {
+    size: A4;
+    margin: 18mm 16mm 20mm;
+    @bottom-left { content: "Tirek · {{ s.inspection.number }} · версия отчёта {{ report.version }}"; font-size: 8pt; color: #5b6472; }
+    @bottom-right { content: "стр. " counter(page) " из " counter(pages); font-size: 8pt; color: #5b6472; }
+  }
+  body { font-family: "DejaVu Sans", sans-serif; font-size: 9.5pt; color: #141a22; line-height: 1.45; }
+  h1 { font-size: 17pt; margin: 0 0 2mm; letter-spacing: -0.01em; }
+  h2 { font-size: 12pt; margin: 8mm 0 3mm; padding-bottom: 1.5mm; border-bottom: 0.6pt solid #141a22; }
+  h3 { font-size: 10pt; margin: 4mm 0 1.5mm; }
+  .mono { font-family: "DejaVu Sans Mono", monospace; font-variant-numeric: tabular-nums; }
+  .muted { color: #5b6472; }
+  .notice { border: 0.6pt solid #b7bec8; padding: 3mm; font-size: 8.5pt; margin: 4mm 0; }
+  table { width: 100%; border-collapse: collapse; margin: 2mm 0; }
+  th, td { text-align: left; vertical-align: top; padding: 1.6mm 2mm; border-bottom: 0.4pt solid #d5dae1; }
+  th { font-size: 8pt; text-transform: uppercase; letter-spacing: 0.04em; color: #5b6472; font-weight: normal; }
+  .kv td:first-child { width: 42%; color: #5b6472; }
+  .tag { display: inline-block; padding: 0.4mm 1.6mm; border: 0.6pt solid; font-size: 8pt; }
+  .approved { border-color: #1d5c3a; color: #1d5c3a; }
+  .preliminary { border-color: #8a5a00; color: #8a5a00; border-style: dashed; }
+  .R1 { background: #fde2e1; } .R2 { background: #fdecd8; } .R3 { background: #fbf4d0; } .R4 { background: #e6f0e8; }
+  .defect { page-break-inside: avoid; border: 0.6pt solid #d5dae1; padding: 3mm; margin: 3mm 0; }
+  .photos img { width: 55mm; height: 40mm; object-fit: cover; margin: 1mm 1mm 0 0; border: 0.4pt solid #d5dae1; }
+  .signature td { border: none; padding-top: 10mm; }
+</style>
+</head>
+<body>
+
+<p class="muted mono">TIREK · ЭКСПЛУАТАЦИОННЫЙ ОТЧЁТ</p>
+<h1>Отчёт по обследованию {{ s.inspection.number }}</h1>
+<p class="muted">{{ s.building.address }}, {{ s.building.city }} · версия отчёта {{ report.version }} · сформирован {{ report.created_at|date:"d.m.Y H:i" }}</p>
+
+<div class="notice">
+  Документ сформирован платформой Tirek из утверждённых данных эксплуатационного обследования.
+  Он <b>не является официальным экспертным заключением</b>; его юридический статус определяется отдельно.
+  Платформа не выдаёт автоматических заключений о безопасности здания.
+  Метки <span class="tag approved">утверждено</span> и <span class="tag preliminary">предварительно</span> различают утверждённые инженером выводы и предварительные замечания.
+</div>
+
+<h2>1. Идентификация здания</h2>
+<table class="kv">
+  <tr><td>Внутренний идентификатор</td><td class="mono">{{ s.building.internal_code }}</td></tr>
+  <tr><td>Наименование</td><td>{{ s.building.name|unknown }}</td></tr>
+  <tr><td>Адрес</td><td>{{ s.building.address }}</td></tr>
+  <tr><td>Год постройки</td><td class="mono">{{ s.building.year_built|unknown }}</td></tr>
+  <tr><td>Этажность / подъезды / квартиры</td><td class="mono">{{ s.building.floors|unknown }} / {{ s.building.entrances|unknown }} / {{ s.building.apartments|unknown }}</td></tr>
+  <tr><td>Общая площадь, м²</td><td class="mono">{{ s.building.total_area_m2|unknown }}</td></tr>
+  <tr><td>Конструктивная схема</td><td>{{ s.building.structural_scheme }}</td></tr>
+</table>
+
+<h2>2. Реквизиты обследования</h2>
+<table class="kv">
+  <tr><td>Номер / версия</td><td class="mono">{{ s.inspection.number }} / v{{ s.inspection.version }}</td></tr>
+  <tr><td>Вид осмотра</td><td>{{ s.inspection.type }}</td></tr>
+  <tr><td>Чек-лист</td><td>{{ s.inspection.checklist }}</td></tr>
+  <tr><td>Дата проведения</td><td class="mono">{{ s.inspection.performed_at|slice:":10"|unknown }}</td></tr>
+  <tr><td>Исполнитель</td><td>{{ s.inspection.assignee }}</td></tr>
+  <tr><td>Проверяющий инженер</td><td>{{ s.inspection.reviewer }} {% if s.inspection.reviewer_position %}({{ s.inspection.reviewer_position }}){% endif %}</td></tr>
+  <tr><td>Дата утверждения</td><td class="mono">{{ s.inspection.approved_at|slice:":10" }}</td></tr>
+  {% if s.inspection.correction_reason %}<tr><td>Причина исправления</td><td>{{ s.inspection.correction_reason }}</td></tr>{% endif %}
+</table>
+<h3>Область и ограничения осмотра</h3>
+<p>{{ s.inspection.scope_and_limitations|default:"Не указаны."|linebreaksbr }}</p>
+{% if s.inspection.summary %}<h3>Общие выводы</h3><p>{{ s.inspection.summary|linebreaksbr }}</p>{% endif %}
+
+<h2>3. Результаты чек-листа</h2>
+<table>
+  <tr><th>Пункт</th><th>Элемент</th><th>Проверка</th><th>Результат</th><th>Комментарий</th></tr>
+  {% for a in s.answers %}
+  <tr>
+    <td class="mono">{{ a.code }}</td>
+    <td>{{ a.group }}{% if a.element %} · {{ a.element }}{% endif %}</td>
+    <td>{{ a.text }}</td>
+    <td>{{ a.compliance }}{% if a.value %} {{ a.value }}{% endif %}</td>
+    <td>{{ a.comment }}</td>
+  </tr>
+  {% endfor %}
+</table>
+
+<h2>4. Дефекты</h2>
+{% for d in s.defects %}
+<div class="defect {% if d.approved %}{{ d.risk }}{% endif %}">
+  <h3><span class="mono">{{ d.number }}</span> · {{ d.type }}
+    {% if d.approved %}<span class="tag approved">утверждено · {{ d.risk }}</span>
+    {% else %}<span class="tag preliminary">предварительно{% if d.preliminary_severity %} · {{ d.preliminary_severity }}{% endif %}</span>{% endif %}
+  </h3>
+  <p class="muted">{{ d.element_path }}{% if d.location %} · {{ d.location }}{% endif %} · обнаружен {{ d.detected_on }}</p>
+  <p>{{ d.description|linebreaksbr }}</p>
+  {% if d.approved %}
+  <p><b>Обоснование категории риска:</b> {{ d.risk_justification }} <span class="muted">— {{ d.risk_engineer }}</span></p>
+  {% endif %}
+  {% if d.recommendations %}<p><b>Рекомендации:</b> {{ d.recommendations }}</p>{% endif %}
+  {% if d.observations %}
+  <p><b>Повторные наблюдения:</b></p>
+  <ul>{% for o in d.observations %}<li><span class="mono">{{ o.date }}</span> — {{ o.description }}</li>{% endfor %}</ul>
+  {% endif %}
+  <div class="photos">{% for p in d.photos %}<img src="{{ photos|get:p.file }}" alt="{{ p.caption }}">{% endfor %}</div>
+</div>
+{% empty %}
+<p>Дефекты не выявлены.</p>
+{% endfor %}
+
+<h2>5. Предварительный план мероприятий</h2>
+<table>
+  <tr><th>№</th><th>Мероприятие</th><th>Дефект</th><th>Приоритет</th><th>Рекомендуемый срок</th><th>Статус</th></tr>
+  {% for w in s.work_plan %}
+  <tr><td class="mono">{{ w.number }}</td><td>{{ w.title }}</td><td class="mono">{{ w.defect|default:"—" }}</td><td>{{ w.priority }}</td><td class="mono">{{ w.recommended_date|default:"—" }}</td><td>{{ w.status }}</td></tr>
+  {% empty %}
+  <tr><td colspan="6">Мероприятия не сформированы.</td></tr>
+  {% endfor %}
+</table>
+<p class="muted">Техническое утверждение рекомендаций не означает финансового согласования или юридического разрешения на работы.</p>
+
+<h2>6. Проверяющий инженер</h2>
+<table class="signature">
+  <tr><td>{{ s.inspection.reviewer }}<br><span class="muted">{{ s.inspection.reviewer_position }}</span></td><td>Подпись ____________________</td><td>Дата {{ s.inspection.approved_at|slice:":10" }}</td></tr>
+</table>
+
+</body>
+</html>
