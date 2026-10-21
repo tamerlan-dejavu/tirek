@@ -1,24 +1,51 @@
+import clsx from "clsx";
 import type { ReactNode } from "react";
 
 export interface Column<T> {
   key: string;
-  header: string;
+  header: ReactNode;
   render: (row: T) => ReactNode;
   className?: string;
+  /** Hide on narrow screens; the primary columns stay. */
+  hideOnMobile?: boolean;
+  align?: "left" | "right";
 }
 
-export function Table<T extends { id: string }>({ rows, columns, onRowClick }: {
+/**
+ * Dense, readable data table. Rows are keyboard-activatable when clickable.
+ * Wrap in a Card with `flush` for the drawing-sheet frame.
+ */
+export function Table<T extends { id: string }>({
+  rows,
+  columns,
+  onRowClick,
+  caption,
+  rowClassName,
+}: {
   rows: T[];
   columns: Column<T>[];
   onRowClick?: (row: T) => void;
+  caption?: string;
+  rowClassName?: (row: T) => string | undefined;
 }) {
   return (
-    <div className="overflow-x-auto rounded-sm border border-line bg-surface">
-      <table className="w-full text-sm">
+    <div className="overflow-x-auto">
+      <table className="w-full border-collapse text-sm">
+        {caption && <caption className="sr-only">{caption}</caption>}
         <thead>
-          <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-ink-muted">
+          <tr className="border-b border-line bg-canvas/60">
             {columns.map((c) => (
-              <th key={c.key} className="px-3 py-2 font-normal">{c.header}</th>
+              <th
+                key={c.key}
+                scope="col"
+                className={clsx(
+                  "label-tech px-3 py-2 font-normal whitespace-nowrap first:pl-4 last:pr-4",
+                  c.align === "right" ? "text-right" : "text-left",
+                  c.hideOnMobile && "hidden md:table-cell",
+                )}
+              >
+                {c.header}
+              </th>
             ))}
           </tr>
         </thead>
@@ -26,11 +53,27 @@ export function Table<T extends { id: string }>({ rows, columns, onRowClick }: {
           {rows.map((row) => (
             <tr
               key={row.id}
+              tabIndex={onRowClick ? 0 : undefined}
               onClick={onRowClick ? () => onRowClick(row) : undefined}
-              className={onRowClick ? "cursor-pointer border-b border-line last:border-0 hover:bg-canvas" : "border-b border-line last:border-0"}
+              onKeyDown={onRowClick ? (e) => e.key === "Enter" && onRowClick(row) : undefined}
+              className={clsx(
+                "border-b border-line last:border-0",
+                onRowClick && "cursor-pointer transition-colors hover:bg-teal-soft/50 focus-visible:bg-teal-soft/60",
+                rowClassName?.(row),
+              )}
             >
               {columns.map((c) => (
-                <td key={c.key} className={c.className ?? "px-3 py-2"}>{c.render(row)}</td>
+                <td
+                  key={c.key}
+                  className={clsx(
+                    "px-3 py-2.5 align-middle first:pl-4 last:pr-4 [&_.font-mono]:whitespace-nowrap",
+                    c.align === "right" && "text-right",
+                    c.hideOnMobile && "hidden md:table-cell",
+                    c.className,
+                  )}
+                >
+                  {c.render(row)}
+                </td>
               ))}
             </tr>
           ))}

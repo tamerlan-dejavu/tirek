@@ -1,55 +1,122 @@
 import clsx from "clsx";
+import { Check, Circle, Diamond, OctagonAlert, TriangleAlert } from "lucide-react";
 import type { ReactNode } from "react";
 
 import type { RiskCategory } from "@/lib/api/types";
-import { RISK } from "@/lib/status";
+import { RISK, type Tone } from "@/lib/status";
 
-export function Badge({ children, className }: { children: ReactNode; className?: string }) {
+/* ---------------------------------------------------------------------------------------------
+ * SEVERITY — expert risk category. Encoded three ways: color, shape icon, 4-segment meter.
+ * Approved: solid. Preliminary (field estimate, not approved): dashed outline + «предв.».
+ * ------------------------------------------------------------------------------------------ */
+
+const RISK_STYLE: Record<RiskCategory, { text: string; seg: string; icon: typeof Circle }> = {
+  R1: { text: "text-critical-ink", seg: "bg-r1", icon: OctagonAlert },
+  R2: { text: "text-warning-ink", seg: "bg-r2", icon: TriangleAlert },
+  R3: { text: "text-[#3d5e74]", seg: "bg-r3", icon: Diamond },
+  R4: { text: "text-unknown-ink", seg: "bg-r4", icon: Circle },
+};
+
+export function SeverityMeter({ category, className }: { category: RiskCategory; className?: string }) {
+  const level = RISK[category].level;
+  return (
+    <span aria-hidden className={clsx("inline-flex items-end gap-[2px]", className)}>
+      {[1, 2, 3, 4].map((i) => (
+        <span
+          key={i}
+          className={clsx("w-[3px] rounded-[1px]", i <= level ? RISK_STYLE[category].seg : "bg-line")}
+          style={{ height: 4 + i * 2 }}
+        />
+      ))}
+    </span>
+  );
+}
+
+export function RiskBadge({
+  category,
+  preliminary = false,
+  size = "md",
+}: {
+  category: RiskCategory | null | "";
+  preliminary?: boolean;
+  size?: "sm" | "md";
+}) {
+  if (!category) {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-sm border border-dashed border-line-strong px-1.5 py-0.5 text-xs text-muted">
+        <span className="font-mono">R—</span> без оценки
+      </span>
+    );
+  }
+  const s = RISK_STYLE[category];
+  const Icon = s.icon;
   return (
     <span
       className={clsx(
-        "inline-flex items-center gap-1 rounded-sm border px-1.5 py-0.5 text-xs font-medium whitespace-nowrap",
-        className,
+        "inline-flex items-center gap-1.5 rounded-sm border bg-surface font-medium whitespace-nowrap",
+        size === "sm" ? "px-1 py-px text-[11px]" : "px-1.5 py-0.5 text-xs",
+        preliminary ? "border-dashed border-line-strong" : "border-line",
+        s.text,
       )}
+      title={preliminary ? `${RISK[category].label} — предварительная оценка` : RISK[category].label}
     >
+      <Icon aria-hidden className="size-3.5 shrink-0" strokeWidth={2.2} />
+      <span className="font-mono">{category}</span>
+      {size === "md" && <span className="font-normal text-ink">{RISK[category].short}</span>}
+      {preliminary && <span className="font-normal text-muted">· предв.</span>}
+      <span className="sr-only">{preliminary ? ", предварительная оценка" : ", утверждённая оценка"}</span>
+      {size === "md" && <SeverityMeter category={category} className="ml-0.5" />}
+    </span>
+  );
+}
+
+/* ---------------------------------------------------------------------------------------------
+ * STATUS — workflow position. Neutral chip with a tone dot; never filled with severity colors.
+ * ------------------------------------------------------------------------------------------ */
+
+const DOT: Record<Tone, string> = {
+  critical: "bg-critical",
+  warning: "bg-warning",
+  healthy: "bg-healthy",
+  info: "bg-info",
+  accent: "bg-teal",
+  neutral: "bg-unknown",
+};
+
+export function StatusBadge({ label, tone = "neutral" }: { label: string; tone?: Tone }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-2 py-0.5 text-xs whitespace-nowrap text-ink">
+      <span aria-hidden className={clsx("size-1.5 rounded-full", DOT[tone])} />
+      {label}
+    </span>
+  );
+}
+
+/** Approved engineering conclusion vs preliminary observation (ТЗ 9.7, 11.6). */
+export function ApprovalTag({ approved, children }: { approved: boolean; children?: ReactNode }) {
+  return approved ? (
+    <span className="inline-flex items-center gap-1 rounded-sm bg-healthy-soft px-1.5 py-0.5 text-xs font-medium text-healthy-ink">
+      <Check aria-hidden className="size-3" strokeWidth={2.5} />
+      {children ?? "Утверждено"}
+    </span>
+  ) : (
+    <span className="inline-flex items-center gap-1 rounded-sm border border-dashed border-warning px-1.5 py-0.5 text-xs font-medium text-warning-ink">
+      {children ?? "Предварительно"}
+    </span>
+  );
+}
+
+export function Tag({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <span className={clsx("inline-flex items-center gap-1 rounded-sm bg-mist px-1.5 py-0.5 text-xs text-ink", className)}>
       {children}
     </span>
   );
 }
 
-const RISK_CLASS: Record<RiskCategory, string> = {
-  R1: "border-risk-r1 text-risk-r1 bg-risk-r1/10",
-  R2: "border-risk-r2 text-risk-r2 bg-risk-r2/10",
-  R3: "border-risk-r3 text-risk-r3 bg-risk-r3/10",
-  R4: "border-risk-r4 text-risk-r4 bg-risk-r4/10",
-};
-
-/** Approved risk: solid. Preliminary severity: dashed + «предварительно» (ТЗ 11.6). */
-export function RiskBadge({
-  category,
-  preliminary = false,
-}: {
-  category: RiskCategory | null | "";
-  preliminary?: boolean;
-}) {
-  if (!category) return <Badge className="border-line text-ink-muted">без оценки</Badge>;
+/** Marks demo/mock content so it is never mistaken for real findings. */
+export function DemoMark() {
   return (
-    <Badge className={clsx(RISK_CLASS[category], preliminary && "border-dashed bg-transparent")}>
-      <span className="font-mono">{category}</span>
-      <span className="sr-only">{RISK[category].label}</span>
-      {preliminary && <span>· предварительно</span>}
-    </Badge>
+    <span className="label-tech rounded-sm border border-dashed border-line-strong px-1 !text-[10px]">демо-данные</span>
   );
-}
-
-export function ApprovalTag({ approved }: { approved: boolean }) {
-  return approved ? (
-    <Badge className="border-approved text-approved">утверждено</Badge>
-  ) : (
-    <Badge className="border-preliminary border-dashed text-preliminary">предварительно</Badge>
-  );
-}
-
-export function StatusBadge({ label }: { label: string }) {
-  return <Badge className="border-line bg-surface text-ink">{label}</Badge>;
 }
