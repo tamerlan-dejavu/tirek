@@ -58,7 +58,7 @@ function Group({ title, items, tone }: { title: string; items: WorkOrder[]; tone
                   late ? "bg-critical" : w.priority === "urgent" ? "bg-warning" : "bg-steel-2",
                 )}
               />
-              <Link href={`/work-orders?focus=${w.id}`} className="flex items-start gap-3 rounded-md px-2 py-2 hover:bg-canvas">
+              <Link href={`/work-orders?focus=${w.id}`} className="flex items-start gap-3 rounded-md px-2 py-2 transition-colors duration-[var(--duration-fast)] hover:bg-mist/60">
                 <div className="w-10 shrink-0 text-center leading-none">
                   {date ? (
                     <>
@@ -102,10 +102,10 @@ export function ActivityFeed({ items }: { items: ActivityItem[] }) {
     <ol className="space-y-3">
       {items.map((a) => (
         <li key={a.id} className="flex gap-3 text-sm">
-          <span aria-hidden className="mt-1.5 size-1.5 shrink-0 rounded-full bg-teal" />
+          <span aria-hidden className="mt-1.5 size-1.5 shrink-0 rounded-full bg-accent" />
           <div className="min-w-0">
             <div className="text-ink">
-              <Link href={a.kind === "defect" ? `/defects/${a.object_id}` : `/work-orders?focus=${a.object_id}`} className="font-mono text-[12.5px] text-teal-strong hover:underline">
+              <Link href={a.kind === "defect" ? `/defects/${a.object_id}` : `/work-orders?focus=${a.object_id}`} className="font-mono text-[12.5px] text-accent-strong hover:underline">
                 {a.object_number}
               </Link>{" "}
               → <span className="font-medium">{STATUS_LABEL[a.to_status] ?? a.to_status}</span>
