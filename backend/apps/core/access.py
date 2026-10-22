@@ -24,8 +24,21 @@ from apps.organizations.models import (
     Role,
 )
 
-PROVIDER_ROLES = {Role.PROVIDER_ADMIN, Role.FIELD_SPECIALIST, Role.REVIEWING_ENGINEER}
-CUSTOMER_ROLES = {Role.OSI_REPRESENTATIVE}
+PROVIDER_ROLES = {
+    Role.PROVIDER_ADMIN,
+    Role.FIELD_SPECIALIST,
+    Role.REVIEWING_ENGINEER,
+    Role.PRODUCTION_PLANNER,
+    Role.DISPATCHER,
+}
+CUSTOMER_ROLES = {Role.OSI_REPRESENTATIVE, Role.RESIDENT}
+# Provider roles that see every building their organization serves
+PROVIDER_FULL_ROLES = [
+    Role.PROVIDER_ADMIN,
+    Role.REVIEWING_ENGINEER,
+    Role.PRODUCTION_PLANNER,
+    Role.DISPATCHER,
+]
 
 
 def _active_links(now=None) -> QuerySet[BuildingOrganizationLink]:
@@ -82,7 +95,7 @@ def accessible_building_ids(user, roles: set[str] | None = None) -> QuerySet:
 
     provider_full = memberships.filter(
         organization__type=OrganizationType.PROVIDER,
-        role__in=[Role.PROVIDER_ADMIN, Role.REVIEWING_ENGINEER],
+        role__in=PROVIDER_FULL_ROLES,
     ).values("organization_id")
     provider_field = memberships.filter(
         organization__type=OrganizationType.PROVIDER, role=Role.FIELD_SPECIALIST
@@ -101,6 +114,30 @@ def accessible_building_ids(user, roles: set[str] | None = None) -> QuerySet:
                 Q(id__in=links.filter(organization_id__in=provider_field).values("building_id"))
                 & Q(id__in=assigned)
             )
+        )
+        .values("id")
+        .distinct()
+    )
+
+
+def resident_building_ids(user) -> QuerySet:
+    """
+    Buildings of a resident: those linked to the customer organization (ОСИ) the resident
+    belongs to. Deliberately separate from `accessible_building_ids`: residents never get
+    engineering data (inspections, defects, risk assessments) through the generic endpoints.
+    """
+    from apps.buildings.models import Building
+
+    if not user.is_authenticated or not user.is_active:
+        return Building.objects.none().values("id")
+    orgs = (
+        _active_memberships(user)
+        .filter(organization__type=OrganizationType.CUSTOMER, role=Role.RESIDENT)
+        .values("organization_id")
+    )
+    return (
+        Building.objects.filter(
+            id__in=_active_links().filter(organization_id__in=orgs).values("building_id")
         )
         .values("id")
         .distinct()

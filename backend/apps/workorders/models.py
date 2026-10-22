@@ -42,13 +42,15 @@ TRANSITIONS: dict[str, set[str]] = {
 # Separation of responsibilities (ТЗ 5.8): who may move the work order INTO a status
 ENGINEERING = {Role.REVIEWING_ENGINEER, Role.PROVIDER_ADMIN}
 CUSTOMER = {Role.OSI_REPRESENTATIVE}
+# ПТО plans production: schedules, reschedules, starts work and records completion
+PRODUCTION = {Role.PRODUCTION_PLANNER}
 TARGET_ROLES: dict[str, set[str]] = {
     S.AGREED: CUSTOMER,
     S.REJECTED: CUSTOMER,
-    S.POSTPONED: CUSTOMER | ENGINEERING,
-    S.SCHEDULED: CUSTOMER | ENGINEERING,
-    S.IN_PROGRESS: CUSTOMER | ENGINEERING,  # plus the responsible executor
-    S.DONE: CUSTOMER | ENGINEERING,  # plus the responsible executor
+    S.POSTPONED: CUSTOMER | ENGINEERING | PRODUCTION,
+    S.SCHEDULED: CUSTOMER | ENGINEERING | PRODUCTION,
+    S.IN_PROGRESS: CUSTOMER | ENGINEERING | PRODUCTION,  # plus the responsible executor
+    S.DONE: CUSTOMER | ENGINEERING | PRODUCTION,  # plus the responsible executor
     S.VERIFIED: {Role.REVIEWING_ENGINEER},
     S.CLOSED: ENGINEERING,
     S.CANCELLED: ENGINEERING,

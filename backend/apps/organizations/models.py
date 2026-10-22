@@ -16,6 +16,9 @@ class Role(models.TextChoices):
     FIELD_SPECIALIST = "field_specialist", "Полевой специалист"
     REVIEWING_ENGINEER = "reviewing_engineer", "Проверяющий инженер"
     OSI_REPRESENTATIVE = "osi_representative", "Представитель ОСИ"
+    PRODUCTION_PLANNER = "production_planner", "ПТО / производственный блок"
+    DISPATCHER = "dispatcher", "Диспетчер"
+    RESIDENT = "resident", "Житель"
 
 
 class LinkFunction(models.TextChoices):
