@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from apps.core.fields import DisplayNameField
 from apps.defects.models import DefectStatus
 
 from .models import WorkOrder, WorkOrderComment, WorkOrderEvent
@@ -11,7 +12,7 @@ class WorkOrderSerializer(serializers.ModelSerializer):
     risk_category = serializers.CharField(
         source="defect.approved_risk", read_only=True, default=None
     )
-    author_name = serializers.CharField(source="created_by.__str__", read_only=True, default=None)
+    author_name = DisplayNameField(source="created_by")
 
     class Meta:
         model = WorkOrder
@@ -78,7 +79,7 @@ class TransitionSerializer(serializers.Serializer):
 
 
 class WorkOrderEventSerializer(serializers.ModelSerializer):
-    actor_name = serializers.CharField(source="actor.__str__", read_only=True)
+    actor_name = DisplayNameField(source="actor")
 
     class Meta:
         model = WorkOrderEvent
@@ -96,7 +97,7 @@ class WorkOrderEventSerializer(serializers.ModelSerializer):
 
 
 class WorkOrderCommentSerializer(serializers.ModelSerializer):
-    author_name = serializers.CharField(source="author.__str__", read_only=True)
+    author_name = DisplayNameField(source="author")
 
     class Meta:
         model = WorkOrderComment

@@ -44,7 +44,8 @@ class WorkOrderViewSet(BuildingScopedViewSet):
     search_fields = ["number", "title", "building__address"]
     ordering_fields = ["planned_date", "priority", "created_at"]
     create_roles = (Role.REVIEWING_ENGINEER,)  # UC-06: engineer recommends
-    update_roles = (Role.REVIEWING_ENGINEER, Role.PROVIDER_ADMIN)
+    # ПТО sets dates, executors and resources (materials, labor)
+    update_roles = (Role.REVIEWING_ENGINEER, Role.PROVIDER_ADMIN, Role.PRODUCTION_PLANNER)
 
     def perform_create(self, serializer):
         access.require(

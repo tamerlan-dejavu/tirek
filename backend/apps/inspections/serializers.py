@@ -1,13 +1,14 @@
 from rest_framework import serializers
 
 from apps.checklists.models import AnswerType, ChecklistTemplateVersion
+from apps.core.fields import DisplayNameField
 
 from .models import Inspection, InspectionAnswer, InspectionReview
 
 
 class InspectionSerializer(serializers.ModelSerializer):
     building_address = serializers.CharField(source="building.address", read_only=True)
-    assignee_name = serializers.CharField(source="assignee.__str__", read_only=True)
+    assignee_name = DisplayNameField(source="assignee")
     is_published = serializers.SerializerMethodField()
 
     class Meta:

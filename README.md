@@ -32,7 +32,23 @@
 
 Порты задаются в `.env` (`TIREK_*_PORT`). Postgres и Redis наружу не публикуются, поэтому не конфликтуют с локальными установками. Файлы в dev хранятся в приватном docker-томе, в production — в S3 (`STORAGE_BACKEND=s3`).
 
-Демо-пользователи после `seed`: `admin@provider.local`, `field@provider.local`, `engineer@provider.local`, `osi@customer.local`, `admin@other.local` (чужой поставщик — для проверки изоляции).
+### Вход на демо-стенде
+
+При `DEMO_MODE=true` (включено в `.env.example`) страница `/login` показывает экран **«Кто вы?»**: выберите роль — и вы внутри.
+Сменить роль — кнопка «Сменить роль» в верхней панели. Беспарольный вход работает только для фиксированных демо-аккаунтов
+([backend/apps/accounts/demo.py](backend/apps/accounts/demo.py)); **на стенде с реальными данными `DEMO_MODE` должен быть выключен.**
+
+| Роль | Email | Стартовая страница |
+| --- | --- | --- |
+| Житель | `resident@customer.local` | `/resident` — заявки, фото/видео, статус, опросы, работы в доме |
+| Полевой специалист | `field@provider.local` | `/inspections` — обследования, чек-листы, дефекты |
+| Инженер ЕИТЦ | `engineer@provider.local` | `/dashboard` — проверка, риск R1–R4, рекомендации |
+| ПТО / производственный блок | `pto@provider.local` | `/work-orders` — план производства, ресурсы, задания |
+| Диспетчер | `dispatcher@provider.local` | `/requests` — заявки, назначение, сроки, аварии |
+| ОСИ | `osi@customer.local` | `/osi` — состояние дома, согласование работ |
+| Администратор ЕИТЦ | `admin@provider.local` | `/dashboard` — пользователи, справочники |
+
+Для входа по email пароль у всех демо-аккаунтов `tirek-demo-2026`; `admin@other.local` — чужая организация (проверка изоляции).
 
 ### Если не открывается
 

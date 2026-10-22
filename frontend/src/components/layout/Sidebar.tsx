@@ -2,15 +2,21 @@
 
 import clsx from "clsx";
 import {
+  Bell,
+  BookOpen,
   Building2,
   ChartColumn,
   ClipboardCheck,
   FileText,
   FolderOpen,
+  House,
+  Inbox,
   LayoutGrid,
+  MessageSquarePlus,
   Settings2,
   TriangleAlert,
   Users,
+  Vote,
   Wrench,
   type LucideIcon,
 } from "lucide-react";
@@ -35,31 +41,33 @@ export interface NavGroup {
   items: NavItem[];
 }
 
-/** Provider staff navigation. Role-aware: items the role cannot use are not shown. */
+/** Provider staff navigation. Role-aware: items the role does not use are not shown. */
 export const PROVIDER_NAV: NavGroup[] = [
   {
     title: "Работа",
     items: [
       { href: "/dashboard", label: "Обзор", icon: LayoutGrid, code: "01" },
-      { href: "/buildings", label: "Дома", icon: Building2, code: "02" },
-      { href: "/inspections", label: "Обследования", icon: ClipboardCheck, code: "03" },
-      { href: "/defects", label: "Дефекты", icon: TriangleAlert, code: "04" },
-      { href: "/work-orders", label: "Обслуживание", icon: Wrench, code: "05" },
+      { href: "/requests", label: "Заявки жителей", icon: Inbox, code: "02" },
+      { href: "/buildings", label: "Дома", icon: Building2, code: "03" },
+      { href: "/inspections", label: "Обследования", icon: ClipboardCheck, code: "04", visible: can.inspect },
+      { href: "/defects", label: "Дефекты", icon: TriangleAlert, code: "05" },
+      { href: "/work-orders", label: "Обслуживание", icon: Wrench, code: "06" },
     ],
   },
   {
     title: "Сведения",
     items: [
-      { href: "/analytics", label: "Аналитика", icon: ChartColumn, code: "06" },
-      { href: "/reports", label: "Отчёты", icon: FileText, code: "07" },
-      { href: "/documents", label: "Документы", icon: FolderOpen, code: "08" },
+      { href: "/analytics", label: "Аналитика", icon: ChartColumn, code: "07", visible: can.seeAnalytics },
+      { href: "/reports", label: "Отчёты", icon: FileText, code: "08" },
+      { href: "/documents", label: "Документы", icon: FolderOpen, code: "09" },
     ],
   },
   {
     title: "Управление",
     items: [
-      { href: "/admin/organizations", label: "Организации и роли", icon: Users, code: "09", visible: can.manageOrganizations },
-      { href: "/settings", label: "Настройки", icon: Settings2, code: "10" },
+      { href: "/admin/organizations", label: "Организации и роли", icon: Users, code: "10", visible: can.manageOrganizations },
+      { href: "/admin/reference", label: "Справочники", icon: BookOpen, code: "11", visible: can.manageOrganizations },
+      { href: "/settings", label: "Настройки", icon: Settings2, code: "12" },
     ],
   },
 ];
@@ -69,16 +77,32 @@ export const OSI_NAV: NavGroup[] = [
     title: "Кабинет ОСИ",
     items: [
       { href: "/osi", label: "Мои дома", icon: Building2, code: "01" },
-      { href: "/settings", label: "Настройки", icon: Settings2, code: "02" },
+      { href: "/requests", label: "Заявки жителей", icon: Inbox, code: "02" },
+      { href: "/settings", label: "Настройки", icon: Settings2, code: "03" },
     ],
   },
 ];
 
-const ROLE_LABEL: Record<string, string> = {
+export const RESIDENT_NAV: NavGroup[] = [
+  {
+    title: "Мой дом",
+    items: [
+      { href: "/resident", label: "Главная", icon: House, code: "01" },
+      { href: "/resident/new", label: "Сообщить о проблеме", icon: MessageSquarePlus, code: "02" },
+      { href: "/resident/polls", label: "Опросы", icon: Vote, code: "03" },
+      { href: "/settings", label: "Уведомления и профиль", icon: Bell, code: "04" },
+    ],
+  },
+];
+
+export const ROLE_LABEL: Record<string, string> = {
   provider_admin: "Администратор",
   field_specialist: "Полевой специалист",
-  reviewing_engineer: "Проверяющий инженер",
+  reviewing_engineer: "Инженер",
+  production_planner: "ПТО",
+  dispatcher: "Диспетчер",
   osi_representative: "Представитель ОСИ",
+  resident: "Житель",
 };
 
 export function Sidebar({ groups, onNavigate }: { groups: NavGroup[]; onNavigate?: () => void }) {

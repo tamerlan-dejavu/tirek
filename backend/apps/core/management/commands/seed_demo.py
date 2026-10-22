@@ -29,6 +29,7 @@ from apps.inspections.models import (
     InspectionReview,
     InspectionStatus,
 )
+from apps.notifications.models import Notification, NotificationKind
 from apps.organizations.models import (
     BuildingAssignment,
     BuildingOrganizationLink,
@@ -39,6 +40,15 @@ from apps.organizations.models import (
     Role,
 )
 from apps.risks.models import RiskAssessment
+from apps.service_requests.models import (
+    Poll,
+    PollOption,
+    PollVote,
+    RequestCategory,
+    RequestStatus,
+    ServiceRequest,
+    ServiceRequestEvent,
+)
 from apps.workorders.models import Priority, WorkOrder, WorkOrderEvent, WorkOrderStatus
 
 PASSWORD = "tirek-demo-2026"  # noqa: S105 — local demo data only, guarded by DEBUG
@@ -57,6 +67,8 @@ USERS = [
         "Ведущий инженер-конструктор",
         Role.REVIEWING_ENGINEER,
     ),
+    ("pto@provider.local", "Марат Жумабаев", "Начальник ПТО", Role.PRODUCTION_PLANNER),
+    ("dispatcher@provider.local", "Гульнара Омарова", "Диспетчер", Role.DISPATCHER),
 ]
 
 ITEMS = [
@@ -117,6 +129,12 @@ class Command(BaseCommand):
             Role.OSI_REPRESENTATIVE,
         )
         self._user("admin@other.local", "Админ другого поставщика", "", other, Role.PROVIDER_ADMIN)
+        self.resident = self._user(
+            "resident@customer.local", "Асель Бекова", "Житель, кв. 34", osi, Role.RESIDENT
+        )
+        self.neighbour = self._user(
+            "resident2@customer.local", "Нурлан Сериков", "Житель, кв. 112", osi, Role.RESIDENT
+        )
 
         self.version = self._checklist(provider)
 
@@ -140,6 +158,9 @@ class Command(BaseCommand):
             self._approved_inspection(b1, provider)
             self._submitted_inspection(b2, provider)
             self._scheduled_inspection(b3, provider)
+
+        if not ServiceRequest.objects.exists():
+            self._requests_and_polls(Building.objects.get(internal_code="ALM-0001"))
 
         self.stdout.write(
             self.style.SUCCESS(f"Demo data ready. Password for all users: {PASSWORD}")
@@ -548,3 +569,186 @@ class Command(BaseCommand):
         self._inspection(
             b, provider, "INS-2026-0003", InspectionStatus.DRAFT, planned_date=days_ago(-9)
         )
+
+    # --- resident requests and polls ------------------------------------------------------
+
+    def _requests_and_polls(self, b):
+        dispatcher = self.users[Role.DISPATCHER]
+        field = self.users[Role.FIELD_SPECIALIST]
+        specs = [
+            # author, category, entrance, floor, apt, place, description, emergency, status, days, assignee, resolution
+            (
+                self.resident,
+                RequestCategory.LEAK,
+                2,
+                9,
+                "34",
+                "потолок в коридоре",
+                "После дождя капает с потолка в коридоре, на обоях мокрое пятно примерно метр.",
+                False,
+                RequestStatus.IN_PROGRESS,
+                3,
+                field,
+                "",
+            ),
+            (
+                self.resident,
+                RequestCategory.ELEVATOR,
+                2,
+                None,
+                "",
+                "лифт подъезда №2",
+                "Лифт останавливается между 5 и 6 этажом, двери открываются не до конца.",
+                False,
+                RequestStatus.RESOLVED,
+                21,
+                field,
+                "Заменён датчик точной остановки, лифт проверен.",
+            ),
+            (
+                self.neighbour,
+                RequestCategory.ELECTRICAL,
+                4,
+                1,
+                "",
+                "этажный щит, 1 этаж",
+                "Из этажного щита пахнет гарью, слышно потрескивание.",
+                True,
+                RequestStatus.NEW,
+                0,
+                None,
+                "",
+            ),
+            (
+                self.neighbour,
+                RequestCategory.COMMON_AREAS,
+                4,
+                None,
+                "",
+                "входная дверь",
+                "Не закрывается входная дверь подъезда, сломан доводчик.",
+                False,
+                RequestStatus.ACCEPTED,
+                1,
+                None,
+                "",
+            ),
+            (
+                self.resident,
+                RequestCategory.OTHER,
+                2,
+                None,
+                "",
+                "двор",
+                "Прошу покрасить скамейки во дворе.",
+                False,
+                RequestStatus.REJECTED,
+                30,
+                None,
+                "Благоустройство двора не входит в техническое обслуживание; передано в ОСИ.",
+            ),
+        ]
+        for i, (
+            author,
+            cat,
+            ent,
+            floor,
+            apt,
+            place,
+            desc,
+            emerg,
+            status,
+            days,
+            assignee,
+            res,
+        ) in enumerate(specs, start=1):
+            req = ServiceRequest.objects.create(
+                number=f"REQ-2026-{i:04d}",
+                building=b,
+                author=author,
+                category=cat,
+                entrance=ent,
+                floor=floor,
+                apartment=apt,
+                place=place,
+                description=desc,
+                is_emergency=emerg,
+                status=status,
+                assignee=assignee,
+                due_date=(
+                    days_ago(-2) if assignee and status == RequestStatus.IN_PROGRESS else None
+                ),
+                resolution=res,
+                created_by=author,
+            )
+            ServiceRequest.objects.filter(pk=req.pk).update(created_at=at(days))
+            path = {
+                RequestStatus.ACCEPTED: [RequestStatus.ACCEPTED],
+                RequestStatus.IN_PROGRESS: [RequestStatus.ACCEPTED, RequestStatus.IN_PROGRESS],
+                RequestStatus.RESOLVED: [
+                    RequestStatus.ACCEPTED,
+                    RequestStatus.IN_PROGRESS,
+                    RequestStatus.RESOLVED,
+                ],
+                RequestStatus.REJECTED: [RequestStatus.REJECTED],
+            }.get(status, [])
+            prev = RequestStatus.NEW
+            for n, st in enumerate(path):
+                ev = ServiceRequestEvent.objects.create(
+                    request=req,
+                    from_status=prev,
+                    to_status=st,
+                    actor=dispatcher,
+                    comment=res
+                    if st in (RequestStatus.RESOLVED, RequestStatus.REJECTED)
+                    else (f"Исполнитель: {assignee}" if st == RequestStatus.IN_PROGRESS else ""),
+                )
+                ServiceRequestEvent.objects.filter(pk=ev.pk).update(
+                    created_at=at(max(days - n - 1, 0))
+                )
+                prev = st
+            if author and path:
+                Notification.objects.create(
+                    recipient=author,
+                    kind=NotificationKind.SERVICE_REQUEST,
+                    building=b,
+                    title=f"Заявка {req.number}: {RequestStatus(status).label.lower()}",
+                    body=res,
+                    link=f"/resident/requests/{req.pk}",
+                )
+        Notification.objects.create(
+            recipient=dispatcher,
+            kind=NotificationKind.EMERGENCY_REQUEST,
+            building=b,
+            title="Новая заявка с отметкой «авария»: REQ-2026-0003",
+            body="Запах гари из этажного щита, подъезд №4.",
+            link="/requests",
+        )
+
+        poll = Poll.objects.create(
+            building=b,
+            created_by=self.osi_user,
+            question="Когда удобнее провести замену стояков отопления в подъезде №2?",
+            description="Консультативный опрос ОСИ. Не является юридически значимым голосованием собственников.",
+            closes_at=at(-14),
+        )
+        options = [
+            PollOption.objects.create(poll=poll, text=t, sort_order=i)
+            for i, t in enumerate(
+                [
+                    "В мае, сразу после отопительного сезона",
+                    "В июне",
+                    "В августе, перед отопительным сезоном",
+                ]
+            )
+        ]
+        PollVote.objects.create(poll=poll, option=options[1], user=self.neighbour)
+        poll2 = Poll.objects.create(
+            building=b,
+            created_by=self.osi_user,
+            question="Устанавливать ли видеонаблюдение у входов в подъезды?",
+            description="Консультативный опрос ОСИ.",
+            closes_at=at(-30),
+        )
+        for i, t in enumerate(["Да", "Нет", "Нужна дополнительная информация"]):
+            PollOption.objects.create(poll=poll2, text=t, sort_order=i)

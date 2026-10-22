@@ -26,13 +26,14 @@ export function EvidenceGallery({ targetType, targetId }: { targetType: string; 
   const query = useApi<Paginated<StoredFile>>(`files/?target_type=${targetType}&target_id=${targetId}`);
   const [open, setOpen] = useState<StoredFile | null>(null);
   const photos = query.data?.results.filter((f) => f.content_type.startsWith("image/")) ?? [];
+  const videos = query.data?.results.filter((f) => f.content_type.startsWith("video/")) ?? [];
   const url = (f: StoredFile) => `${API_BASE}/v1/files/${f.id}/download/`;
 
   if (query.isLoading) return <div className="aspect-[16/7] animate-pulse rounded-md bg-mist" />;
-  if (!photos.length)
+  if (!photos.length && !videos.length)
     return (
       <Empty title="Фотофиксация отсутствует" icon={<Camera className="size-5" />}>
-        Фото прикрепляются из чек-листа обследования или при повторном наблюдении.
+        Фото и видео прикрепляются к записи при её создании или наблюдении.
       </Empty>
     );
 
@@ -51,6 +52,18 @@ export function EvidenceGallery({ targetType, targetId }: { targetType: string; 
           </li>
         ))}
       </ul>
+      {videos.length > 0 && (
+        <ul className={photos.length ? "mt-3 space-y-2" : "space-y-2"}>
+          {videos.map((v) => (
+            <li key={v.id} className="overflow-hidden rounded-md border border-line bg-base">
+              <video src={url(v)} controls preload="metadata" className="max-h-[420px] w-full" aria-label={v.caption || v.original_name} />
+              <div className="px-3 py-1.5 font-mono text-[11px] text-faint">
+                Видео · {formatDate(v.created_at)}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
       {open && (
         <div
           role="dialog"

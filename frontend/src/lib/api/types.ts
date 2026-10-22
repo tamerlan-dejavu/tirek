@@ -5,7 +5,14 @@
 
 export type UUID = string;
 export type RiskCategory = "R1" | "R2" | "R3" | "R4";
-export type Role = "provider_admin" | "field_specialist" | "reviewing_engineer" | "osi_representative";
+export type Role =
+  | "provider_admin"
+  | "field_specialist"
+  | "reviewing_engineer"
+  | "production_planner"
+  | "dispatcher"
+  | "osi_representative"
+  | "resident";
 
 export interface Membership {
   id: UUID;
@@ -206,4 +213,58 @@ export interface ActivityItem {
   actor: string;
   comment: string;
   at: string;
+}
+
+export type RequestStatus = "new" | "accepted" | "in_progress" | "resolved" | "rejected";
+
+export interface ServiceRequest {
+  id: UUID;
+  number: string;
+  building: UUID;
+  building_address: string;
+  author: UUID | null;
+  author_name: string | null;
+  category: string;
+  category_label: string;
+  entrance: number | null;
+  floor: number | null;
+  apartment: string;
+  place: string;
+  description: string;
+  contact_phone: string;
+  is_emergency: boolean;
+  emergency_confirmed_at: string | null;
+  status: RequestStatus;
+  assignee: UUID | null;
+  assignee_name: string | null;
+  due_date: string | null;
+  resolution: string;
+  defect: UUID | null;
+  defect_number: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Poll {
+  id: UUID;
+  building: UUID;
+  building_address: string;
+  question: string;
+  description: string;
+  closes_at: string | null;
+  options: { id: number; text: string; votes: number | null }[];
+  my_vote: number | null;
+  total_votes: number;
+  created_at: string;
+}
+
+export interface DemoAccount {
+  key: string;
+  email: string;
+  title: string;
+  person: string;
+  summary: string;
+  abilities: string[];
+  home: string;
+  group: "residents" | "provider" | "customer";
 }

@@ -13,6 +13,7 @@ LINK_TARGETS = {
     "defect": ("defects", "defect"),
     "defect_observation": ("defects", "defectobservation"),
     "work_order": ("workorders", "workorder"),
+    "service_request": ("service_requests", "servicerequest"),
 }
 
 

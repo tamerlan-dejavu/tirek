@@ -1,12 +1,15 @@
 "use client";
 
-import { Bell, ChevronRight, LogOut, Menu, Search } from "lucide-react";
+import { Bell, ChevronRight, LogOut, Menu, Repeat2, Search } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
 import { api } from "@/lib/api/client";
 import { useApi, useMe } from "@/lib/api/hooks";
+import { isCustomerOnly } from "@/lib/permissions";
+
+import { ROLE_LABEL } from "./Sidebar";
 
 const SEGMENT_LABEL: Record<string, string> = {
   dashboard: "Обзор",
@@ -26,10 +29,14 @@ const SEGMENT_LABEL: Record<string, string> = {
   history: "История",
   fill: "Чек-лист",
   new: "Новая запись",
+  requests: "Заявки жителей",
+  resident: "Мой дом",
+  polls: "Опросы",
+  reference: "Справочники",
 };
 
 // Grouping segments without their own page
-const NO_PAGE = new Set(["/osi/buildings", "/osi/defects", "/admin"]);
+const NO_PAGE = new Set(["/osi/buildings", "/osi/defects", "/admin", "/resident/requests"]);
 
 function Breadcrumbs() {
   const all = usePathname().split("/").filter(Boolean);
@@ -61,7 +68,9 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
   const router = useRouter();
   const { data: me } = useMe();
   const { data: unread } = useApi<{ count: number }>("notifications/unread_count/");
+  const { data: demo } = useApi<{ enabled: boolean }>("auth/demo/", ["demo"]);
   const [q, setQ] = useState("");
+  const showSearch = !!me && !isCustomerOnly(me);
 
   async function logout() {
     await api("auth/logout/", { method: "POST" }).catch(() => undefined);
@@ -87,6 +96,7 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
       </button>
       <Breadcrumbs />
 
+      {showSearch ? (
       <form onSubmit={search} role="search" className="ml-auto hidden w-72 items-center gap-2 rounded-md border border-line bg-surface px-2.5 transition-colors focus-within:border-accent sm:flex">
         <Search aria-hidden className="size-4 text-faint" />
         <input
@@ -98,6 +108,20 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
         />
         <kbd className="hidden font-mono text-[10px] text-faint xl:block">↵</kbd>
       </form>
+      ) : (
+        <span className="ml-auto hidden sm:block" />
+      )}
+
+      {demo?.enabled && (
+        <button
+          onClick={logout}
+          className="hidden h-8 items-center gap-1.5 rounded-md border border-line px-2.5 text-[13px] text-muted transition-colors hover:border-line-strong hover:text-ink md:inline-flex"
+          title="Выйти и выбрать другую роль"
+        >
+          <Repeat2 className="size-3.5" aria-hidden />
+          Сменить роль
+        </button>
+      )}
 
       <Link
         href="/settings#notifications"
@@ -118,7 +142,11 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
         </span>
         <div className="hidden leading-tight xl:block">
           <div className="text-[13px] text-ink">{me?.full_name || me?.email}</div>
-          {me?.position && <div className="text-[11px] text-muted">{me.position}</div>}
+          <div className="text-[11px] text-muted">
+            {[me?.memberships[0] ? ROLE_LABEL[me.memberships[0].role] : "", me?.position]
+              .filter((v, i, arr) => v && arr.indexOf(v) === i)
+              .join(" · ")}
+          </div>
         </div>
         <button onClick={logout} className="grid size-8 place-items-center rounded-md text-muted hover:bg-mist hover:text-ink" aria-label="Выйти">
           <LogOut className="size-4" />

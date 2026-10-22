@@ -1,10 +1,11 @@
+from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
 from django.db import transaction
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import generics, status
 from rest_framework.decorators import api_view, permission_classes, throttle_classes
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
@@ -13,7 +14,7 @@ from rest_framework.views import APIView
 from apps.audit.models import AuditAction
 from apps.audit.services import log
 
-from . import services
+from . import demo, services
 from .models import OneTimeToken, User, UserSession
 from .serializers import (
     LoginSerializer,
@@ -66,6 +67,42 @@ class LoginView(APIView):
         services.track_session(request, user)
         log(AuditAction.LOGIN, user, actor=user, request=request)
         return Response(MeSerializer(user).data)
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def demo_accounts(request):
+    """Role picker for the demo stand. Empty and disabled unless DEMO_MODE is on."""
+    if not settings.DEMO_MODE:
+        return Response({"enabled": False, "accounts": []})
+    existing = set(User.objects.filter(is_active=True).values_list("email", flat=True))
+    return Response(
+        {"enabled": True, "accounts": [a for a in demo.public_list() if a["email"] in existing]}
+    )
+
+
+class DemoLoginView(APIView):
+    """Password-less login into a FIXED demo account. Disabled (404) outside DEMO_MODE."""
+
+    permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "login"
+
+    def post(self, request):
+        if not settings.DEMO_MODE:
+            raise NotFound()
+        account = demo.BY_KEY.get(str(request.data.get("key", "")))
+        if account is None:
+            raise ValidationError({"key": "Неизвестная демо-роль."})
+        user = User.objects.filter(email=account.email, is_active=True).first()
+        if user is None:
+            raise ValidationError({"key": "Демо-данные не загружены: выполните seed_demo."})
+        login(request, user, backend="django.contrib.auth.backends.ModelBackend")
+        services.track_session(request, user)
+        log(
+            AuditAction.LOGIN, user, actor=user, request=request, changes={"demo_role": account.key}
+        )
+        return Response({**MeSerializer(user).data, "home": account.home})
 
 
 class LogoutView(APIView):

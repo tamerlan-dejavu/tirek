@@ -1,10 +1,12 @@
 from rest_framework import serializers
 
+from apps.core.fields import DisplayNameField
+
 from .models import RiskAssessment
 
 
 class RiskAssessmentSerializer(serializers.ModelSerializer):
-    engineer_name = serializers.CharField(source="engineer.__str__", read_only=True)
+    engineer_name = DisplayNameField(source="engineer")
 
     class Meta:
         model = RiskAssessment
