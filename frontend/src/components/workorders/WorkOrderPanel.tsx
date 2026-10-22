@@ -11,7 +11,15 @@ import { api } from "@/lib/api/client";
 import { useAction, useApi, useMe } from "@/lib/api/hooks";
 import type { Role, WorkOrder, WorkOrderStatus } from "@/lib/api/types";
 import { roles } from "@/lib/permissions";
-import { formatDateTime, PRIORITY, WORK_ORDER_STATUS } from "@/lib/status";
+import {
+  formatDate,
+  formatDateTime,
+  PERIODICITY,
+  PRIORITY,
+  WORK_KIND,
+  WORK_ORDER_STATUS,
+  WORK_TYPE,
+} from "@/lib/status";
 
 /* Mirrors backend workorders/models.py — UI hint only, the server enforces it. */
 const NEXT: Record<WorkOrderStatus, WorkOrderStatus[]> = {
@@ -60,23 +68,46 @@ interface Event {
   created_at: string;
 }
 
-const input = "h-10 w-full rounded-md border border-line bg-surface px-3 text-sm focus:border-accent focus:outline-none";
+const input =
+  "h-10 w-full rounded-md border border-line bg-surface px-3 text-sm focus:border-accent focus:outline-none";
 
 /** ПТО workspace for one work order: schedule, executor, resources, status, evidence. */
-export function WorkOrderPanel({ wo, onClose, onChanged }: { wo: WorkOrder; onClose: () => void; onChanged: () => void }) {
+export function WorkOrderPanel({
+  wo,
+  onClose,
+  onChanged,
+}: {
+  wo: WorkOrder;
+  onClose: () => void;
+  onChanged: () => void;
+}) {
   const { data: me } = useMe();
   const my = roles(me);
   const canPlan = PLANNERS.some((r) => my.has(r));
   const events = useApi<Event[]>(`work-orders/${wo.id}/events/`);
-  const [plan, setPlan] = useState({ planned_date: wo.planned_date ?? "", responsible_name: wo.responsible_name ?? "", materials: "", labor_hours: "" });
+  const [plan, setPlan] = useState({
+    planned_date: wo.planned_date ?? "",
+    responsible_name: wo.responsible_name ?? "",
+    materials: "",
+    labor_hours: "",
+  });
   const [reason, setReason] = useState("");
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<unknown>(null);
-  const transition = useAction<{ status: string; reason: string }>(`work-orders/${wo.id}/transition/`, [[`work-orders/${wo.id}/events/`]]);
+  const transition = useAction<{ status: string; reason: string }>(
+    `work-orders/${wo.id}/transition/`,
+    [[`work-orders/${wo.id}/events/`]],
+  );
 
   useEffect(() => {
-    api<WorkOrder & { materials: string; labor_hours: string | null }>(`work-orders/${wo.id}/`).then((full) =>
-      setPlan((p) => ({ ...p, materials: full.materials ?? "", labor_hours: full.labor_hours ?? "" })),
+    api<WorkOrder & { materials: string; labor_hours: string | null }>(
+      `work-orders/${wo.id}/`,
+    ).then((full) =>
+      setPlan((p) => ({
+        ...p,
+        materials: full.materials ?? "",
+        labor_hours: full.labor_hours ?? "",
+      })),
     );
   }, [wo.id]);
 
@@ -117,25 +148,41 @@ export function WorkOrderPanel({ wo, onClose, onChanged }: { wo: WorkOrder; onCl
   }
 
   return (
-    <div className="fixed inset-0 z-40 flex justify-end" role="dialog" aria-modal="true" aria-label={wo.title}>
+    <div
+      className="fixed inset-0 z-40 flex justify-end"
+      role="dialog"
+      aria-modal="true"
+      aria-label={wo.title}
+    >
       <button className="absolute inset-0 bg-black/60" aria-label="Закрыть" onClick={onClose} />
       <div className="relative flex h-full w-full max-w-lg flex-col overflow-y-auto border-l border-line bg-surface shadow-[var(--shadow-overlay)]">
         <div className="flex items-start justify-between gap-3 border-b border-line px-6 py-5">
           <div className="min-w-0">
-            <div className="label-tech">{wo.number} · {wo.building_address}</div>
+            <div className="label-tech">
+              {wo.number} · {wo.building_address}
+            </div>
             <h2 className="mt-1 text-xl leading-snug font-semibold">{wo.title}</h2>
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <StatusBadge {...WORK_ORDER_STATUS[wo.status]} />
-              <span className="text-xs text-muted">приоритет: {PRIORITY[wo.priority].label.toLowerCase()}</span>
+              <span className="text-xs text-muted">
+                приоритет: {PRIORITY[wo.priority].label.toLowerCase()}
+              </span>
               {wo.risk_category && <RiskBadge category={wo.risk_category} size="sm" />}
               {wo.defect && (
-                <Link href={`/defects/${wo.defect}`} className="font-mono text-xs text-accent hover:underline">
+                <Link
+                  href={`/defects/${wo.defect}`}
+                  className="font-mono text-xs text-accent hover:underline"
+                >
                   {wo.defect_number}
                 </Link>
               )}
             </div>
           </div>
-          <button onClick={onClose} className="grid size-8 place-items-center rounded-md text-muted hover:bg-mist hover:text-ink" aria-label="Закрыть панель">
+          <button
+            onClick={onClose}
+            className="grid size-8 place-items-center rounded-md text-muted hover:bg-mist hover:text-ink"
+            aria-label="Закрыть панель"
+          >
             <X className="size-4" />
           </button>
         </div>
@@ -144,28 +191,90 @@ export function WorkOrderPanel({ wo, onClose, onChanged }: { wo: WorkOrder; onCl
           {error ? <ErrorState error={error} /> : null}
 
           <section>
+            <h3 className="label-tech mb-3">Мероприятие</h3>
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+              <div>
+                <dt className="text-xs text-muted">Тип</dt>
+                <dd>{WORK_KIND[wo.kind]}</dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted">Вид работ</dt>
+                <dd>{wo.work_type ? WORK_TYPE[wo.work_type] : "—"}</dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted">Элемент</dt>
+                <dd>{wo.element_name ?? "—"}</dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted">Периодичность</dt>
+                <dd>{PERIODICITY[wo.periodicity] ?? "—"}</dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted">Рекомендуемая дата</dt>
+                <dd className="font-mono">{formatDate(wo.recommended_date)}</dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted">Приоритет</dt>
+                <dd>{PRIORITY[wo.priority].label}</dd>
+              </div>
+              {wo.basis && (
+                <div className="col-span-2">
+                  <dt className="text-xs text-muted">Основание</dt>
+                  <dd>{wo.basis}</dd>
+                </div>
+              )}
+            </dl>
+          </section>
+
+          <section>
             <h3 className="label-tech mb-3">Производственный план</h3>
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="block text-sm">
                 <span className="text-muted">Плановая дата</span>
-                <input type="date" disabled={!canPlan} value={plan.planned_date} onChange={(e) => setPlan({ ...plan, planned_date: e.target.value })} className={`${input} mt-1`} />
+                <input
+                  type="date"
+                  disabled={!canPlan}
+                  value={plan.planned_date}
+                  onChange={(e) => setPlan({ ...plan, planned_date: e.target.value })}
+                  className={`${input} mt-1`}
+                />
               </label>
               <label className="block text-sm">
                 <span className="text-muted">Исполнитель / бригада</span>
-                <input disabled={!canPlan} value={plan.responsible_name} onChange={(e) => setPlan({ ...plan, responsible_name: e.target.value })} className={`${input} mt-1`} />
+                <input
+                  disabled={!canPlan}
+                  value={plan.responsible_name}
+                  onChange={(e) => setPlan({ ...plan, responsible_name: e.target.value })}
+                  className={`${input} mt-1`}
+                />
               </label>
               <label className="block text-sm sm:col-span-2">
                 <span className="text-muted">Материалы</span>
-                <textarea disabled={!canPlan} value={plan.materials} onChange={(e) => setPlan({ ...plan, materials: e.target.value })} className="mt-1 min-h-20 w-full rounded-md border border-line bg-surface p-3 text-sm focus:border-accent focus:outline-none" />
+                <textarea
+                  disabled={!canPlan}
+                  value={plan.materials}
+                  onChange={(e) => setPlan({ ...plan, materials: e.target.value })}
+                  className="mt-1 min-h-20 w-full rounded-md border border-line bg-surface p-3 text-sm focus:border-accent focus:outline-none"
+                />
               </label>
               <label className="block text-sm">
                 <span className="text-muted">Трудозатраты, чел·ч</span>
-                <input type="number" step="0.5" min="0" disabled={!canPlan} value={plan.labor_hours} onChange={(e) => setPlan({ ...plan, labor_hours: e.target.value })} className={`${input} mt-1 font-mono`} />
+                <input
+                  type="number"
+                  step="0.5"
+                  min="0"
+                  disabled={!canPlan}
+                  value={plan.labor_hours}
+                  onChange={(e) => setPlan({ ...plan, labor_hours: e.target.value })}
+                  className={`${input} mt-1 font-mono`}
+                />
               </label>
             </div>
             {canPlan && (
               <div className="mt-3 flex items-center gap-3">
-                <Button variant="secondary" onClick={savePlan}>Сохранить план</Button>
+                <Button variant="secondary" onClick={savePlan}>
+                  Сохранить план
+                </Button>
                 {saved && <span className="text-xs text-healthy-ink">Сохранено</span>}
               </div>
             )}
@@ -175,7 +284,13 @@ export function WorkOrderPanel({ wo, onClose, onChanged }: { wo: WorkOrder; onCl
             <section>
               <h3 className="label-tech mb-3">Статус</h3>
               {actions.some((a) => NEEDS_REASON.includes(a)) && (
-                <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Причина (для переноса, отклонения, отмены)" aria-label="Причина" className={`${input} mb-2`} />
+                <input
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  placeholder="Причина (для переноса, отклонения, отмены)"
+                  aria-label="Причина"
+                  className={`${input} mb-2`}
+                />
               )}
               <div className="flex flex-wrap gap-2">
                 {actions.map((a) => (
@@ -184,7 +299,9 @@ export function WorkOrderPanel({ wo, onClose, onChanged }: { wo: WorkOrder; onCl
                     size="sm"
                     variant={NEEDS_REASON.includes(a) ? "secondary" : "primary"}
                     disabled={transition.isPending || (NEEDS_REASON.includes(a) && !reason.trim())}
-                    onClick={() => transition.mutate({ status: a, reason }, { onSuccess: onChanged })}
+                    onClick={() =>
+                      transition.mutate({ status: a, reason }, { onSuccess: onChanged })
+                    }
                   >
                     {ACTION_LABEL[a] ?? WORK_ORDER_STATUS[a].label}
                   </Button>
@@ -195,7 +312,11 @@ export function WorkOrderPanel({ wo, onClose, onChanged }: { wo: WorkOrder; onCl
                   <ErrorState error={transition.error} />
                 </div>
               ) : null}
-              {actions.includes("done") && <p className="mt-2 text-xs text-muted">Для отметки выполнения приложите фото результата или акт.</p>}
+              {actions.includes("done") && (
+                <p className="mt-2 text-xs text-muted">
+                  Для отметки выполнения приложите фото результата или акт.
+                </p>
+              )}
             </section>
           )}
 
@@ -203,7 +324,12 @@ export function WorkOrderPanel({ wo, onClose, onChanged }: { wo: WorkOrder; onCl
             <h3 className="label-tech mb-3">Подтверждения</h3>
             <label className="flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed border-line-strong text-sm text-muted transition-colors hover:border-accent hover:text-ink">
               <Upload className="size-4" aria-hidden /> Фото результата или акт (PDF)
-              <input type="file" accept="image/*,application/pdf" className="sr-only" onChange={(e) => e.target.files?.[0] && attach(e.target.files[0])} />
+              <input
+                type="file"
+                accept="image/*,application/pdf"
+                className="sr-only"
+                onChange={(e) => e.target.files?.[0] && attach(e.target.files[0])}
+              />
             </label>
           </section>
 
@@ -212,7 +338,10 @@ export function WorkOrderPanel({ wo, onClose, onChanged }: { wo: WorkOrder; onCl
             <ol className="relative space-y-3 border-l border-line pl-4">
               {(events.data ?? []).map((e) => (
                 <li key={e.id} className="relative">
-                  <span aria-hidden className="absolute top-1 -left-[21px] size-2.5 rounded-full border-2 border-surface bg-accent" />
+                  <span
+                    aria-hidden
+                    className="absolute top-1 -left-[21px] size-2.5 rounded-full border-2 border-surface bg-accent"
+                  />
                   <div className="text-sm">{WORK_ORDER_STATUS[e.to_status].label}</div>
                   {e.reason && <div className="text-[13px] text-muted">{e.reason}</div>}
                   <div className="font-mono text-[11px] text-faint">
@@ -220,7 +349,9 @@ export function WorkOrderPanel({ wo, onClose, onChanged }: { wo: WorkOrder; onCl
                   </div>
                 </li>
               ))}
-              {events.data?.length === 0 && <li className="text-sm text-muted">Переходов пока не было.</li>}
+              {events.data?.length === 0 && (
+                <li className="text-sm text-muted">Переходов пока не было.</li>
+              )}
             </ol>
           </section>
         </div>

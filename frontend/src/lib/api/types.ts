@@ -161,6 +161,14 @@ export interface WorkOrder {
   defect_number: string | null;
   risk_category: RiskCategory | null;
   title: string;
+  kind: "reactive" | "preventive";
+  work_type: string;
+  periodicity: string;
+  basis: string;
+  element_name: string | null;
+  responsible_display: string | null;
+  materials: string;
+  labor_hours: string | null;
   priority: "urgent" | "high" | "normal" | "low";
   recommended_date: string | null;
   planned_date: string | null;

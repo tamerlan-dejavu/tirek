@@ -84,6 +84,29 @@ export const ELEMENT_GROUP: Record<string, string> = {
 
 export const OPEN_WORK: WorkOrderStatus[] = ["proposed", "agreed", "scheduled", "in_progress", "postponed"];
 
+/** Spec §10 — mirrors backend workorders/models.py */
+export const WORK_TYPE: Record<string, string> = {
+  inspection: "Осмотр",
+  maintenance: "Техническое обслуживание",
+  cleaning: "Очистка, прочистка",
+  testing: "Проверка, замеры",
+  preparation: "Подготовка к сезону",
+  sealing: "Герметизация",
+  repair: "Ремонт",
+  replacement: "Замена",
+};
+export const PERIODICITY: Record<string, string> = {
+  once: "Разово",
+  monthly: "Ежемесячно",
+  quarterly: "Ежеквартально",
+  semiannual: "2 раза в год",
+  annual: "Ежегодно",
+  "3y": "Раз в 3 года",
+  "5y": "Раз в 5 лет",
+};
+export const WORK_KIND = { reactive: "Устранение дефекта", preventive: "Профилактика" } as const;
+export const MONTHS_SHORT = ["янв", "фев", "мар", "апр", "май", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"];
+
 /** Value or «неизвестно» — the UI never invents technical data (ТЗ 5.3, 11.5). */
 export function orUnknown(value: unknown, unit?: string): string {
   if (value === null || value === undefined || value === "") return "неизвестно";
