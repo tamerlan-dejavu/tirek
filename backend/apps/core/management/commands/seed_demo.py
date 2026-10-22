@@ -51,6 +51,8 @@ from apps.service_requests.models import (
     PollOption,
     PollVote,
     RequestCategory,
+    RequestPriority,
+    RequestSource,
     RequestStatus,
     ServiceRequest,
     ServiceRequestEvent,
@@ -168,8 +170,9 @@ class Command(BaseCommand):
         self._fill_passports()
         self._classify_defects()
 
-        if not ServiceRequest.objects.exists():
-            self._requests_and_polls(Building.objects.get(internal_code="ALM-0001"))
+        # Idempotent: missing demo requests are added, existing ones are kept as they are
+        self._requests_and_polls(Building.objects.get(internal_code="ALM-0001"))
+        self._maintenance_plan()
 
         self.stdout.write(
             self.style.SUCCESS(f"Demo data ready. Password for all users: {PASSWORD}")
@@ -574,6 +577,51 @@ class Command(BaseCommand):
                 created_by=field,
             )
 
+    def _maintenance_plan(self):
+        """Preliminary plan (spec §10) for the demo houses, generated like an engineer would."""
+        from apps.workorders import planning
+
+        engineer = self.users[Role.REVIEWING_ENGINEER]
+        for code in ("ALM-0001", "ALM-0002"):
+            b = Building.objects.get(internal_code=code)
+            # Re-running is safe: existing works are not duplicated. Next year gives a full grid.
+            for year in (date.today().year, date.today().year + 1):
+                planning.generate(b, engineer, year)
+
+    def _result_photo(self, b, req, user):
+        """Demo «result photo»: a generated image, stored through the normal upload pipeline."""
+        from io import BytesIO
+
+        from django.contrib.contenttypes.models import ContentType
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from PIL import Image, ImageDraw
+
+        from apps.files.models import FileKind, FileLink
+        from apps.files.services import store_upload
+
+        img = Image.new("RGB", (960, 720), (58, 64, 74))
+        draw = ImageDraw.Draw(img)
+        draw.rectangle((380, 0, 580, 720), fill=(120, 128, 140))  # pipe
+        draw.rectangle((330, 300, 630, 420), fill=(176, 72, 52))  # valve body
+        draw.ellipse((420, 180, 540, 300), outline=(220, 220, 220), width=10)  # handwheel
+        buf = BytesIO()
+        img.save(buf, "JPEG", quality=80)
+        upload = SimpleUploadedFile("result.jpg", buf.getvalue(), content_type="image/jpeg")
+        stored = store_upload(
+            upload,
+            building=b,
+            organization=None,
+            user=user,
+            kind=FileKind.REPAIR_PHOTO,
+            caption="Демо-изображение результата работ",
+        )
+        FileLink.objects.create(
+            file=stored,
+            content_type=ContentType.objects.get_for_model(req),
+            object_id=str(req.pk),
+            created_by=user,
+        )
+
     def _scheduled_inspection(self, b, provider):
         self._inspection(
             b, provider, "INS-2026-0003", InspectionStatus.DRAFT, planned_date=days_ago(-9)
@@ -609,7 +657,7 @@ class Command(BaseCommand):
                 "лифт подъезда №2",
                 "Лифт останавливается между 5 и 6 этажом, двери открываются не до конца.",
                 False,
-                RequestStatus.RESOLVED,
+                RequestStatus.CLOSED,
                 21,
                 field,
                 "Заменён датчик точной остановки, лифт проверен.",
@@ -637,9 +685,9 @@ class Command(BaseCommand):
                 "входная дверь",
                 "Не закрывается входная дверь подъезда, сломан доводчик.",
                 False,
-                RequestStatus.ACCEPTED,
+                RequestStatus.ASSIGNED,
                 1,
-                None,
+                field,
                 "",
             ),
             (
@@ -656,6 +704,30 @@ class Command(BaseCommand):
                 None,
                 "Благоустройство двора не входит в техническое обслуживание; передано в ОСИ.",
             ),
+            # Registered by the field specialist during a round (source «специалист»)
+            (
+                None,
+                RequestCategory.WATER,
+                2,
+                -1,
+                "",
+                "подвал, стояк ХВС у ввода",
+                "Капает из-под сальника запорного вентиля на стояке ХВС, под ним лужа.",
+                False,
+                RequestStatus.DONE,
+                2,
+                field,
+                "Заменена сальниковая набивка вентиля, течь устранена.",
+            ),
+        ]
+        engineer = self.users[Role.REVIEWING_ENGINEER]
+        flow = [
+            RequestStatus.ACCEPTED,
+            RequestStatus.ASSIGNED,
+            RequestStatus.IN_PROGRESS,
+            RequestStatus.DONE,
+            RequestStatus.VERIFIED,
+            RequestStatus.CLOSED,
         ]
         for i, (
             author,
@@ -671,6 +743,8 @@ class Command(BaseCommand):
             assignee,
             res,
         ) in enumerate(specs, start=1):
+            if ServiceRequest.objects.filter(number=f"REQ-2026-{i:04d}").exists():
+                continue
             req = ServiceRequest.objects.create(
                 number=f"REQ-2026-{i:04d}",
                 building=b,
@@ -682,35 +756,42 @@ class Command(BaseCommand):
                 place=place,
                 description=desc,
                 is_emergency=emerg,
+                source=RequestSource.RESIDENT if author else RequestSource.SPECIALIST,
+                priority=RequestPriority.URGENT if emerg else RequestPriority.NORMAL,
                 status=status,
                 assignee=assignee,
-                due_date=(
-                    days_ago(-2) if assignee and status == RequestStatus.IN_PROGRESS else None
-                ),
+                due_date=days_ago(-2) if assignee else None,
                 resolution=res,
-                created_by=author,
+                created_by=author or field,
             )
             ServiceRequest.objects.filter(pk=req.pk).update(created_at=at(days))
-            path = {
-                RequestStatus.ACCEPTED: [RequestStatus.ACCEPTED],
-                RequestStatus.IN_PROGRESS: [RequestStatus.ACCEPTED, RequestStatus.IN_PROGRESS],
-                RequestStatus.RESOLVED: [
-                    RequestStatus.ACCEPTED,
-                    RequestStatus.IN_PROGRESS,
-                    RequestStatus.RESOLVED,
-                ],
-                RequestStatus.REJECTED: [RequestStatus.REJECTED],
-            }.get(status, [])
+            if status == RequestStatus.REJECTED:
+                path = [RequestStatus.REJECTED]
+            elif status in flow:
+                path = flow[: flow.index(status) + 1]
+            else:
+                path = []
+            if RequestStatus.DONE in path:
+                self._result_photo(b, req, assignee)
+            comments = {
+                RequestStatus.ASSIGNED: f"Исполнитель: {assignee}",
+                RequestStatus.DONE: res,
+                RequestStatus.REJECTED: res,
+                RequestStatus.VERIFIED: "Результат проверен на месте",
+            }
+            actors = {
+                RequestStatus.IN_PROGRESS: assignee,
+                RequestStatus.DONE: assignee,
+                RequestStatus.VERIFIED: engineer,
+            }
             prev = RequestStatus.NEW
             for n, st in enumerate(path):
                 ev = ServiceRequestEvent.objects.create(
                     request=req,
                     from_status=prev,
                     to_status=st,
-                    actor=dispatcher,
-                    comment=res
-                    if st in (RequestStatus.RESOLVED, RequestStatus.REJECTED)
-                    else (f"Исполнитель: {assignee}" if st == RequestStatus.IN_PROGRESS else ""),
+                    actor=actors.get(st) or dispatcher,
+                    comment=comments.get(st, ""),
                 )
                 ServiceRequestEvent.objects.filter(pk=ev.pk).update(
                     created_at=at(max(days - n - 1, 0))
@@ -725,6 +806,8 @@ class Command(BaseCommand):
                     body=res,
                     link=f"/resident/requests/{req.pk}",
                 )
+        if Poll.objects.filter(building=b).exists():
+            return
         Notification.objects.create(
             recipient=dispatcher,
             kind=NotificationKind.EMERGENCY_REQUEST,
