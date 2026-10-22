@@ -157,3 +157,19 @@ export function age(iso: string): string {
   const h = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 3_600_000));
   return h < 24 ? `${h} ч` : `${Math.round(h / 24)} дн.`;
 }
+
+export const PRESENCE: Record<"present" | "absent" | "unknown", StatusMeta> = {
+  present: { label: "Есть", tone: "healthy" },
+  absent: { label: "Нет в доме", tone: "neutral" },
+  unknown: { label: "Неизвестно", tone: "warning" },
+};
+
+export const STRUCTURAL_SCHEME: Record<string, string> = {
+  unknown: "неизвестно",
+  panel: "Панельная",
+  brick: "Кирпичная",
+  monolithic: "Монолитная",
+  frame: "Каркасная",
+  block: "Блочная",
+  mixed: "Смешанная",
+};

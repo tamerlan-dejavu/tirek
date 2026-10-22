@@ -268,3 +268,21 @@ export interface DemoAccount {
   home: string;
   group: "residents" | "provider" | "customer";
 }
+
+export type Presence = "present" | "absent" | "unknown";
+
+export interface PassportEntry {
+  id: UUID;
+  building: UUID;
+  element_type: string;
+  element_name: string;
+  group: "structural" | "engineering" | "operational";
+  presence: Presence;
+  quantity: number | null;
+  characteristics: string;
+  source: string;
+  updated_by_name: string | null;
+  updated_at: string;
+  elements_count: number;
+  open_defects: number;
+}
