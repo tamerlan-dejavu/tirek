@@ -11,11 +11,11 @@ import type { DefectStatus, InspectionStatus, RiskCategory, WorkOrderStatus } fr
 
 export type Tone = "critical" | "warning" | "healthy" | "info" | "neutral" | "accent";
 
-export const RISK: Record<RiskCategory, { label: string; short: string; level: 1 | 2 | 3 | 4 }> = {
-  R1: { label: "R1 · критический", short: "Критический", level: 4 },
-  R2: { label: "R2 · высокий", short: "Высокий", level: 3 },
-  R3: { label: "R3 · средний", short: "Средний", level: 2 },
-  R4: { label: "R4 · низкий", short: "Низкий", level: 1 },
+export const RISK: Record<RiskCategory, { label: string; short: string; level: 1 | 2 | 3 | 4; action: string }> = {
+  R1: { label: "R1 · критический", short: "Критический", level: 4, action: "Требуется немедленная реакция" },
+  R2: { label: "R2 · высокий", short: "Высокий", level: 3, action: "Первоочередное включение в план работ" },
+  R3: { label: "R3 · средний", short: "Средний", level: 2, action: "Плановое устранение" },
+  R4: { label: "R4 · низкий", short: "Низкий", level: 1, action: "Наблюдение и профилактический контроль" },
 };
 export const RISK_ORDER: RiskCategory[] = ["R1", "R2", "R3", "R4"];
 
