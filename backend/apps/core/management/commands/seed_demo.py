@@ -841,7 +841,9 @@ class Command(BaseCommand):
         from apps.defects.models import PRIORITY_BY_RISK
         from apps.defects.services import guess_category
 
-        for d in Defect.objects.filter(number__startswith="DEF-2026-").select_related("current_risk"):
+        for d in Defect.objects.filter(number__startswith="DEF-2026-").select_related(
+            "current_risk"
+        ):
             changed = []
             if d.category_id is None:
                 d.category_id = guess_category(d.defect_type) or "other"
