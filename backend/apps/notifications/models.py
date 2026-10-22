@@ -11,6 +11,9 @@ class NotificationKind(models.TextChoices):
     INSPECTION_RETURNED = "inspection_returned", "Обследование возвращено"
     PUBLISHED = "published", "Опубликованы результаты"
     WORK_ORDER = "work_order", "Мероприятие"
+    SERVICE_REQUEST = "service_request", "Заявка жителя"
+    EMERGENCY_REQUEST = "emergency_request", "Аварийная заявка"
+    POLL = "poll", "Опрос жителей"
 
 
 class Notification(UUIDModel):

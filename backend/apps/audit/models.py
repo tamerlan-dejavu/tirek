@@ -23,6 +23,8 @@ class AuditAction(models.TextChoices):
     PUBLISHED = "publication", "Публикация для ОСИ"
     REPORT_GENERATED = "report.generated", "Генерация отчёта"
     URGENT_NOTICE = "notification.urgent", "Срочное уведомление"
+    REQUEST_STATUS = "service_request.status", "Статус заявки"
+    EMERGENCY_CONFIRMED = "service_request.emergency", "Подтверждена авария"
     ADMIN_ACTION = "admin", "Административное действие"
 
 
