@@ -21,7 +21,10 @@ export default function ResidentRequestPage({ params }: { params: Promise<{ id: 
     <QueryState query={query}>
       {(r) => (
         <div className="mx-auto max-w-2xl space-y-6">
-          <Link href="/resident" className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-ink">
+          <Link
+            href="/resident"
+            className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-ink"
+          >
             <ArrowLeft className="size-4" /> Мой дом
           </Link>
           <div>
@@ -29,19 +32,31 @@ export default function ResidentRequestPage({ params }: { params: Promise<{ id: 
               Заявка {r.number} · {formatDateTime(r.created_at)}
             </div>
             <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-[clamp(1.5rem,3.6vw,2rem)] leading-tight font-bold tracking-[-0.025em]">{r.category_label}</h1>
+              <h1 className="text-[clamp(1.5rem,3.6vw,2rem)] leading-tight font-bold tracking-[-0.025em]">
+                {r.category_label}
+              </h1>
               <StatusBadge {...REQUEST_STATUS[r.status]} />
             </div>
             {r.is_emergency && (
               <p className="mt-2 inline-flex items-center gap-1.5 text-sm text-critical-ink">
-                <Siren className="size-4" /> {r.emergency_confirmed_at ? "Авария подтверждена, службы оповещены" : "Отмечено как авария"}
+                <Siren className="size-4" />{" "}
+                {r.emergency_confirmed_at
+                  ? "Авария подтверждена, службы оповещены"
+                  : "Отмечено как авария"}
               </p>
             )}
           </div>
 
           <Card>
             <RequestProgress status={r.status} />
-            {r.status === "rejected" && <p className="mt-4 text-sm text-muted">Заявка отклонена.</p>}
+            {r.status === "rejected" && (
+              <p className="mt-4 text-sm text-muted">Заявка отклонена.</p>
+            )}
+            {r.status === "done" && (
+              <p className="mt-4 text-sm text-muted">
+                Исполнитель отметил выполнение — результат проверит инженер или диспетчер.
+              </p>
+            )}
           </Card>
 
           {(r.resolution || r.assignee_name) && (
@@ -65,9 +80,25 @@ export default function ResidentRequestPage({ params }: { params: Promise<{ id: 
             </p>
             <p className="mt-2 text-[15px] leading-relaxed whitespace-pre-line">{r.description}</p>
             <div className="mt-4">
-              <EvidenceGallery targetType="service_request" targetId={id} />
+              <EvidenceGallery
+                targetType="service_request"
+                targetId={id}
+                kinds={["photo", "video"]}
+              />
             </div>
           </Card>
+
+          {["done", "verified", "closed"].includes(r.status) && (
+            <Card title="Фото результата">
+              <EvidenceGallery
+                targetType="service_request"
+                targetId={id}
+                kinds={["repair_photo"]}
+                emptyTitle="Фото результата нет"
+                emptyText="Исполнитель не приложил фото."
+              />
+            </Card>
+          )}
 
           <Card title="История">
             <RequestHistory requestId={id} createdAt={r.created_at} />

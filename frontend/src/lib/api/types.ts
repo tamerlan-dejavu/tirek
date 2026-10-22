@@ -240,7 +240,7 @@ export interface ActivityItem {
   at: string;
 }
 
-export type RequestStatus = "new" | "accepted" | "in_progress" | "resolved" | "rejected";
+export type RequestStatus = "new" | "accepted" | "assigned" | "in_progress" | "done" | "verified" | "closed" | "rejected";
 
 export interface ServiceRequest {
   id: UUID;
@@ -251,6 +251,10 @@ export interface ServiceRequest {
   author_name: string | null;
   category: string;
   category_label: string;
+  source: "resident" | "specialist" | "dispatcher" | "engineer" | "osi";
+  source_label: string;
+  priority: "urgent" | "high" | "normal" | "low";
+  has_result_photo: boolean;
   entrance: number | null;
   floor: number | null;
   apartment: string;

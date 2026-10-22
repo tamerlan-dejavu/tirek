@@ -47,7 +47,7 @@ export const PROVIDER_NAV: NavGroup[] = [
     title: "Работа",
     items: [
       { href: "/dashboard", label: "Обзор", icon: LayoutGrid, code: "01" },
-      { href: "/requests", label: "Заявки жителей", icon: Inbox, code: "02" },
+      { href: "/requests", label: "Заявки", icon: Inbox, code: "02" },
       { href: "/buildings", label: "Дома", icon: Building2, code: "03" },
       { href: "/inspections", label: "Обследования", icon: ClipboardCheck, code: "04", visible: can.inspect },
       { href: "/defects", label: "Дефекты", icon: TriangleAlert, code: "05" },

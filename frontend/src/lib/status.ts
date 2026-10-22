@@ -153,14 +153,26 @@ export function relativeDue(iso: string | null | undefined): string {
   return `через ${d} дн.`;
 }
 
-export const REQUEST_STATUS: Record<"new" | "accepted" | "in_progress" | "resolved" | "rejected", StatusMeta> = {
+/** Spec §11 — mirrors backend service_requests/models.py */
+export const REQUEST_STATUS: Record<"new" | "accepted" | "assigned" | "in_progress" | "done" | "verified" | "closed" | "rejected", StatusMeta> = {
   new: { label: "Новая", tone: "warning" },
   accepted: { label: "Принята", tone: "accent" },
-  in_progress: { label: "В работе", tone: "info" },
-  resolved: { label: "Решена", tone: "healthy" },
+  assigned: { label: "Назначена", tone: "accent" },
+  in_progress: { label: "Выполняется", tone: "info" },
+  done: { label: "Выполнена", tone: "info" },
+  verified: { label: "Проверена", tone: "healthy" },
+  closed: { label: "Закрыта", tone: "healthy" },
   rejected: { label: "Отклонена", tone: "neutral" },
 };
-export const REQUEST_FLOW = ["new", "accepted", "in_progress", "resolved"] as const;
+export const REQUEST_FLOW = ["new", "accepted", "assigned", "in_progress", "done", "verified", "closed"] as const;
+export const OPEN_REQUEST = ["new", "accepted", "assigned", "in_progress", "done", "verified"];
+export const REQUEST_PRIORITY: Record<"urgent" | "high" | "normal" | "low", StatusMeta> = {
+  urgent: { label: "Аварийный", tone: "critical" },
+  high: { label: "Высокий", tone: "warning" },
+  normal: { label: "Обычный", tone: "neutral" },
+  low: { label: "Низкий", tone: "neutral" },
+};
+export const REQUEST_PRIORITY_ORDER = { urgent: 0, high: 1, normal: 2, low: 3 } as const;
 
 export const REQUEST_CATEGORIES: { value: string; label: string }[] = [
   { value: "leak", label: "Протечка, затопление" },
