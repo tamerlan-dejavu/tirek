@@ -123,6 +123,10 @@ def breakdown(request):
             },
             "open_by_group": _counts(open_defects, "element__element_type__group"),
             "open_by_element_type": _counts(open_defects, "element__element_type__name"),
+            # Basis for extending the classification from accumulated statistics
+            "open_by_category": _counts(open_defects, "category__name"),
+            "all_by_category": _counts(defects, "category__name"),
+            "open_by_priority": _counts(open_defects, "priority"),
             "by_status": _counts(defects, "status"),
             "work_orders_by_status": _counts(work, "status"),
             "monthly": [

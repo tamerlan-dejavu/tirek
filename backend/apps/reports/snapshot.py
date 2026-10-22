@@ -17,7 +17,9 @@ def _photos(obj) -> list[dict]:
 def build_snapshot(inspection: Inspection) -> dict:
     b = inspection.building
     answers = inspection.answers.select_related("item", "item__element_type", "element")
-    defects = inspection.defects.select_related("element", "current_risk__engineer")
+    defects = inspection.defects.select_related(
+        "element", "category", "created_by", "current_risk__engineer"
+    )
     return {
         "building": {
             "internal_code": b.internal_code,
@@ -72,6 +74,9 @@ def build_snapshot(inspection: Inspection) -> dict:
                 "element_path": " → ".join(d.element.path),
                 "location": d.location,
                 "type": d.defect_type,
+                "category": d.category.name if d.category_id else "",
+                "priority": d.get_priority_display() if d.priority else "",
+                "specialist": str(d.created_by) if d.created_by_id else "",
                 "description": d.description,
                 "detected_on": d.detected_on.isoformat(),
                 # Preliminary vs approved are kept distinct (ТЗ 5.11, 9.7)

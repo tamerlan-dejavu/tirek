@@ -121,6 +121,9 @@ export interface Defect {
   element_path: string[];
   element_type: string;
   element_group: "structural" | "engineering" | "operational" | "location";
+  category: string | null;
+  category_name: string | null;
+  priority: DefectPriority | "";
   inspection: UUID | null;
   inspection_number: string | null;
   author_name: string | null;
@@ -194,10 +197,24 @@ export interface Dashboard {
   generated_at: string;
 }
 
+export type DefectPriority = "urgent" | "high" | "normal" | "low";
+
+export interface DefectCategory {
+  code: string;
+  name: string;
+  description: string;
+  sort_order: number;
+  is_active: boolean;
+  open_defects: number;
+}
+
 export interface Breakdown {
   open_by_risk: Record<RiskCategory | "unassessed", number>;
   open_by_group: Record<string, number>;
   open_by_element_type: Record<string, number>;
+  open_by_category: Record<string, number>;
+  all_by_category: Record<string, number>;
+  open_by_priority: Partial<Record<DefectPriority, number>>;
   by_status: Partial<Record<DefectStatus, number>>;
   work_orders_by_status: Partial<Record<WorkOrderStatus, number>>;
   monthly: { month: string; detected: number; closed: number }[];

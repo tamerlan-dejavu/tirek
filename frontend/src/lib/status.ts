@@ -173,3 +173,11 @@ export const STRUCTURAL_SCHEME: Record<string, string> = {
   block: "Блочная",
   mixed: "Смешанная",
 };
+
+/** Urgency of elimination (engineering decision), shown next to — not instead of — danger R1–R4. */
+export const DEFECT_PRIORITY: Record<"urgent" | "high" | "normal" | "low", StatusMeta> = {
+  urgent: { label: "Срочно", tone: "critical" },
+  high: { label: "Высокий", tone: "warning" },
+  normal: { label: "Обычный", tone: "neutral" },
+  low: { label: "Низкий", tone: "neutral" },
+};

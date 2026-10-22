@@ -4,6 +4,7 @@ import Link from "next/link";
 import { use, useState, type FormEvent } from "react";
 
 import { EvidenceGallery } from "@/components/defects/EvidenceGallery";
+import { MediaUpload } from "@/components/files/MediaUpload";
 import { LifecycleStepper } from "@/components/defects/LifecycleStepper";
 import { WorkOrderTable } from "@/components/lists/WorkOrderList";
 import { ApprovalTag, RiskBadge, StatusBadge } from "@/components/ui/Badge";
@@ -15,7 +16,7 @@ import type { Paginated } from "@/lib/api/client";
 import { useAction, useApi, useMe } from "@/lib/api/hooks";
 import type { Building, Defect, RiskCategory, WorkOrder } from "@/lib/api/types";
 import { can, roles } from "@/lib/permissions";
-import { DEFECT_STATUS, formatDate, formatDateTime, RISK_ORDER } from "@/lib/status";
+import { DEFECT_PRIORITY, DEFECT_STATUS, formatDate, formatDateTime, RISK_ORDER } from "@/lib/status";
 
 interface Observation {
   id: string;
@@ -63,8 +64,9 @@ export default function DefectPage({ params }: { params: Promise<{ id: string }>
   const clarify = useAction<{ comment: string }>(`defects/${id}/request-clarification/`, keys);
   const reject = useAction<{ reason: string }>(`defects/${id}/reject/`, keys);
   const close = useAction<{ basis: string }>(`defects/${id}/close/`, keys);
+  const setPriority = useAction<{ priority: string }>(`defects/${id}/`, keys, "PATCH");
   const observe = useAction<{ description: string; trend: string }>(`defects/${id}/observations/`, keys);
-  const actionError = assess.error ?? clarify.error ?? reject.error ?? close.error ?? observe.error;
+  const actionError = setPriority.error ?? assess.error ?? clarify.error ?? reject.error ?? close.error ?? observe.error;
 
   const [riskForm, setRiskForm] = useState({ category: "R3", hazard_description: "", justification: "", recommended_actions: "", revision_reason: "" });
   const [note, setNote] = useState("");
@@ -145,6 +147,7 @@ export default function DefectPage({ params }: { params: Promise<{ id: string }>
 
           <Card index="B" title="Фотофиксация">
             <EvidenceGallery targetType="defect" targetId={id} />
+            {isField && d.status !== "closed" && d.status !== "rejected" && <MediaUpload building={d.building} targetType="defect" targetId={id} />}
           </Card>
 
           <Card index="C" title="Расположение на схеме">
@@ -165,11 +168,35 @@ export default function DefectPage({ params }: { params: Promise<{ id: string }>
         <aside className="space-y-6">
           <Card title="Сведения">
             <dl className="grid grid-cols-2 gap-x-4 gap-y-4">
+              <Field label="Идентификатор" mono>{d.number}</Field>
+              <Field label="Категория">{d.category_name ?? <span className="text-warning-ink">не указана</span>}</Field>
               <Field label="Обнаружен" mono>{formatDate(d.detected_on)}</Field>
-              <Field label="Автор">{d.author_name ?? "—"}</Field>
-              <Field label="Предв. серьёзность" mono>{d.preliminary_severity || "—"}</Field>
-              <Field label="Оценка">
-                <ApprovalTag approved={!!d.approved_risk} />
+              <Field label="Специалист">{d.author_name ?? "—"}</Field>
+              <Field label="Степень опасности">
+                {d.approved_risk ? <RiskBadge category={d.approved_risk} size="sm" /> : <RiskBadge category={d.preliminary_severity} preliminary size="sm" />}
+              </Field>
+              <Field label="Приоритет">
+                {isReviewer ? (
+                  <select
+                    value={d.priority}
+                    onChange={(e) => setPriority.mutate({ priority: e.target.value })}
+                    aria-label="Приоритет устранения"
+                    className="h-8 rounded-md border border-line bg-surface px-2 text-sm focus:border-accent focus:outline-none"
+                  >
+                    <option value="" disabled>
+                      — не задан —
+                    </option>
+                    {Object.entries(DEFECT_PRIORITY).map(([k, v]) => (
+                      <option key={k} value={k}>
+                        {v.label}
+                      </option>
+                    ))}
+                  </select>
+                ) : d.priority ? (
+                  <StatusBadge {...DEFECT_PRIORITY[d.priority]} />
+                ) : (
+                  <ApprovalTag approved={false}>после оценки</ApprovalTag>
+                )}
               </Field>
               <Field label="Обновлено" mono>{formatDateTime(d.updated_at)}</Field>
               {d.closure_basis && <Field label="Основание закрытия">{d.closure_basis}</Field>}

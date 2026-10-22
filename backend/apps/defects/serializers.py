@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from apps.core.fields import DisplayNameField
 
-from .models import Defect, DefectEvent, DefectObservation
+from .models import Defect, DefectCategory, DefectEvent, DefectObservation
 
 
 class DefectSerializer(serializers.ModelSerializer):
@@ -16,6 +16,10 @@ class DefectSerializer(serializers.ModelSerializer):
         source="inspection.number", read_only=True, default=None
     )
     author_name = DisplayNameField(source="created_by")
+    category_name = serializers.CharField(source="category.name", read_only=True, default=None)
+    category = serializers.PrimaryKeyRelatedField(
+        queryset=DefectCategory.objects.filter(is_active=True), allow_null=True, required=False
+    )
 
     class Meta:
         model = Defect
@@ -28,6 +32,9 @@ class DefectSerializer(serializers.ModelSerializer):
             "element_path",
             "element_type",
             "element_group",
+            "category",
+            "category_name",
+            "priority",
             "inspection_number",
             "author_name",
             "location",
@@ -115,3 +122,11 @@ class ReasonSerializer(serializers.Serializer):
 
 class BasisSerializer(serializers.Serializer):
     basis = serializers.CharField()
+
+
+class DefectCategorySerializer(serializers.ModelSerializer):
+    open_defects = serializers.IntegerField(read_only=True, default=0)
+
+    class Meta:
+        model = DefectCategory
+        fields = ["code", "name", "description", "sort_order", "is_active", "open_defects"]

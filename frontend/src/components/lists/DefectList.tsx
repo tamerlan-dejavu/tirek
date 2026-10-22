@@ -10,8 +10,8 @@ import { Chip } from "@/components/ui/Tabs";
 import { Table } from "@/components/ui/Table";
 import type { Paginated } from "@/lib/api/client";
 import { useApi } from "@/lib/api/hooks";
-import type { Defect, RiskCategory } from "@/lib/api/types";
-import { DEFECT_STATUS, formatDate, RISK_ORDER } from "@/lib/status";
+import type { Defect, DefectCategory, RiskCategory } from "@/lib/api/types";
+import { DEFECT_PRIORITY, DEFECT_STATUS, formatDate, RISK_ORDER } from "@/lib/status";
 
 /**
  * Defect register. Severity and workflow status are separate columns, never merged.
@@ -45,6 +45,9 @@ function DefectListInner({
   const [search, setSearch] = useState(urlQuery);
   const [risks, setRisks] = useState<RiskCategory[]>([]);
   const [openOnly, setOpenOnly] = useState(true);
+  const [category, setCategory] = useState("");
+  const [urgentOnly, setUrgentOnly] = useState(false);
+  const categories = useApi<DefectCategory[]>(showFilters ? "defect-categories/" : null);
 
   const params = new URLSearchParams({ ordering: "risk_order" });
   if (buildingId) params.set("building", buildingId);
@@ -52,6 +55,8 @@ function DefectListInner({
   if (search) params.set("search", search);
   risks.forEach((r) => params.append("risk", r));
   if (openOnly) params.set("is_open", "true");
+  if (category) params.set("category", category);
+  if (urgentOnly) ["urgent", "high"].forEach((p) => params.append("priority", p));
   const query = useApi<Paginated<Defect>>(`defects/?${params}`);
 
   const toggleRisk = (r: RiskCategory) => setRisks((v) => (v.includes(r) ? v.filter((x) => x !== r) : [...v, r]));
@@ -78,6 +83,22 @@ function DefectListInner({
               </Chip>
             ))}
           </div>
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            aria-label="Категория дефекта"
+            className="h-8 rounded-md border border-line bg-surface px-2 text-[13px] text-ink focus:border-accent focus:outline-none"
+          >
+            <option value="">Все категории</option>
+            {categories.data?.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+          <Chip active={urgentOnly} onClick={() => setUrgentOnly((v) => !v)}>
+            Срочные и высокие
+          </Chip>
           <Chip active={openOnly} onClick={() => setOpenOnly((v) => !v)}>
             Только открытые
           </Chip>
@@ -87,8 +108,8 @@ function DefectListInner({
       <QueryState
         query={query}
         empty={(d) => d.results.length === 0}
-        emptyTitle={search || risks.length ? "Ничего не найдено" : "Открытых дефектов нет"}
-        emptyText={search || risks.length ? "Измените условия поиска или фильтры." : undefined}
+        emptyTitle={search || risks.length || category || urgentOnly ? "Ничего не найдено" : "Открытых дефектов нет"}
+        emptyText={search || risks.length || category || urgentOnly ? "Измените условия поиска или фильтры." : undefined}
       >
         {(data) => (
           <Table
@@ -113,20 +134,19 @@ function DefectListInner({
               },
               {
                 key: "type",
-                header: "Дефект и место",
+                header: buildingId ? "Дефект и место" : "Дефект · объект · место",
                 render: (r) => (
                   <div className="min-w-[200px]">
                     <div className="text-ink">{r.defect_type}</div>
+                    {r.category_name && <div className="text-xs text-accent">{r.category_name}</div>}
                     <div className="truncate text-xs text-muted">
+                      {!buildingId && `${r.building_address} · `}
                       {r.element_path.join(" → ")}
                       {r.location && ` · ${r.location}`}
                     </div>
                   </div>
                 ),
               },
-              ...(buildingId
-                ? []
-                : [{ key: "addr", header: "Дом", hideOnMobile: true, render: (r: Defect) => <span className="text-[13px]">{r.building_address}</span> }]),
               {
                 key: "status",
                 header: "Статус",
@@ -136,17 +156,27 @@ function DefectListInner({
                 ? []
                 : [
                     {
-                      key: "appr",
-                      header: "Оценка",
+                      key: "prio",
+                      header: "Приоритет",
                       hideOnMobile: true,
-                      render: (r: Defect) => <ApprovalTag approved={!!r.approved_risk} />,
+                      render: (r: Defect) =>
+                        r.priority ? (
+                          <StatusBadge {...DEFECT_PRIORITY[r.priority]} />
+                        ) : (
+                          <ApprovalTag approved={false}>после оценки</ApprovalTag>
+                        ),
                     },
                     {
                       key: "date",
-                      header: "Обнаружен",
+                      header: "Обнаружен · специалист",
                       hideOnMobile: true,
                       align: "right" as const,
-                      render: (r: Defect) => <span className="font-mono text-[13px] tabular text-muted">{formatDate(r.detected_on)}</span>,
+                      render: (r: Defect) => (
+                        <div className="leading-tight">
+                          <div className="font-mono text-[13px] tabular text-muted">{formatDate(r.detected_on)}</div>
+                          {r.author_name && <div className="text-[11px] text-faint">{r.author_name}</div>}
+                        </div>
+                      ),
                     },
                   ]),
             ]}

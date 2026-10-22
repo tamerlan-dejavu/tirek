@@ -90,7 +90,8 @@
     {% if d.approved %}<span class="tag approved">утверждено · {{ d.risk }}</span>
     {% else %}<span class="tag preliminary">предварительно{% if d.preliminary_severity %} · {{ d.preliminary_severity }}{% endif %}</span>{% endif %}
   </h3>
-  <p class="muted">{{ d.element_path }}{% if d.location %} · {{ d.location }}{% endif %} · обнаружен {{ d.detected_on }}</p>
+  <p class="muted">{{ d.element_path }}{% if d.location %} · {{ d.location }}{% endif %} · обнаружен {{ d.detected_on }}{% if d.specialist %} · {{ d.specialist }}{% endif %}</p>
+  <p class="muted">Категория: {{ d.category|default:"не указана" }}{% if d.priority %} · приоритет устранения: {{ d.priority }}{% endif %}</p>
   <p>{{ d.description|linebreaksbr }}</p>
   {% if d.approved %}
   <p><b>Обоснование категории риска:</b> {{ d.risk_justification }} <span class="muted">— {{ d.risk_engineer }}</span></p>
