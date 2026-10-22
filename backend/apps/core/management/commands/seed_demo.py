@@ -14,7 +14,13 @@ from django.db import transaction
 from django.utils import timezone
 
 from apps.accounts.models import User
-from apps.buildings.models import Building, BuildingElement, StructuralScheme
+from apps.buildings.models import (
+    Building,
+    BuildingElement,
+    Presence,
+    StructuralScheme,
+)
+from apps.buildings.services import ensure_passport
 from apps.checklists.models import (
     AnswerType,
     ChecklistItem,
@@ -158,6 +164,8 @@ class Command(BaseCommand):
             self._approved_inspection(b1, provider)
             self._submitted_inspection(b2, provider)
             self._scheduled_inspection(b3, provider)
+
+        self._fill_passports()
 
         if not ServiceRequest.objects.exists():
             self._requests_and_polls(Building.objects.get(internal_code="ALM-0001"))
@@ -752,3 +760,77 @@ class Command(BaseCommand):
         )
         for i, t in enumerate(["Да", "Нет", "Нужна дополнительная информация"]):
             PollOption.objects.create(poll=poll2, text=t, sort_order=i)
+
+    # --- digital passport -----------------------------------------------------------------
+
+    PASSPORTS = {
+        "ALM-0001": {
+            "foundation": ("present", None, "Ленточный сборный железобетонный"),
+            "walls": ("present", None, "Трёхслойные железобетонные панели, 350 мм"),
+            "columns": ("absent", None, "Бескаркасная панельная схема"),
+            "beams": ("absent", None, "Бескаркасная панельная схема"),
+            "slabs": ("present", None, "Сборные ж/б многопустотные плиты"),
+            "balconies": ("present", 128, "Консольные ж/б плиты с металлическим ограждением"),
+            "facade": (
+                "present",
+                None,
+                "Панели с декоративным слоем, межпанельные швы герметизированы в 2009 г.",
+            ),
+            "roof": (
+                "present",
+                None,
+                "Плоская совмещённая, рулонное покрытие, внутренний водосток",
+            ),
+            "electrical": ("present", None, "ВРУ 0,4 кВ, один ввод, этажные щиты"),
+            "water": ("present", None, "ХВС и ГВС, стальные стояки"),
+            "sewerage": ("present", None, "Чугунные стояки, выпуски в дворовую сеть"),
+            "heating": ("present", None, "Центральное, однотрубная система, верхний розлив"),
+            "heat_point": ("present", 1, "ИТП в подвале, подъезд №1"),
+            "ventilation": ("present", None, "Естественная вытяжная через кухни и санузлы"),
+            "gas": ("present", None, "Газовые плиты в квартирах"),
+            "fire_safety": ("unknown", None, ""),
+            "low_current": ("present", None, "Домофон, кабельное ТВ, интернет"),
+            "elevators": ("present", 4, "Пассажирские, 400 кг, по одному в подъезде"),
+            "basement": ("present", None, "Технический подвал под всем домом"),
+            "attic": ("absent", None, "Совмещённая кровля без чердака"),
+            "parking": ("absent", None, ""),
+            "territory": ("present", None, "Двор, детская площадка, гостевые парковочные места"),
+        },
+        "ALM-0002": {
+            "foundation": ("present", None, "Ленточный бутовый"),
+            "walls": ("present", None, "Кирпич, 510 мм"),
+            "slabs": ("present", None, "Деревянные балки по этажам, ж/б над подвалом"),
+            "roof": ("present", None, "Скатная, шифер, наружный водосток"),
+            "heating": ("present", None, "Центральное"),
+            "gas": ("present", None, "Газовые плиты"),
+            "elevators": ("absent", None, "Пятиэтажный дом без лифта"),
+            "attic": ("present", None, "Холодный чердак"),
+            "basement": ("present", None, "Подвал под частью дома"),
+        },
+        "ALM-0003": {
+            "walls": ("present", None, "Монолитный ж/б каркас с заполнением газоблоком"),
+            "elevators": ("present", 4, "По два лифта в подъезде"),
+            "parking": ("present", None, "Подземный паркинг"),
+        },
+    }
+
+    def _fill_passports(self):
+        engineer = self.users[Role.REVIEWING_ENGINEER]
+        for code, data in self.PASSPORTS.items():
+            b = Building.objects.filter(internal_code=code).first()
+            if b is None:
+                continue
+            ensure_passport(b)
+            entries = b.passport_entries.all()
+            if entries.exclude(presence=Presence.UNKNOWN).exists():
+                continue  # already described, keep whatever is there
+            for entry in entries:
+                presence, qty, text = data.get(entry.element_type_id, ("unknown", None, ""))
+                if presence == "unknown":
+                    continue
+                entry.presence = presence
+                entry.quantity = qty
+                entry.characteristics = text
+                entry.source = "ДЕМО · технический паспорт и осмотр"
+                entry.updated_by = engineer
+                entry.save()
