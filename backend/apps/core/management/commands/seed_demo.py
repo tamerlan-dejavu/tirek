@@ -166,6 +166,7 @@ class Command(BaseCommand):
             self._scheduled_inspection(b3, provider)
 
         self._fill_passports()
+        self._classify_defects()
 
         if not ServiceRequest.objects.exists():
             self._requests_and_polls(Building.objects.get(internal_code="ALM-0001"))
@@ -834,3 +835,19 @@ class Command(BaseCommand):
                 entry.source = "ДЕМО · технический паспорт и осмотр"
                 entry.updated_by = engineer
                 entry.save()
+
+    def _classify_defects(self):
+        """Demo defects get a category and, if assessed, a priority (only where empty)."""
+        from apps.defects.models import PRIORITY_BY_RISK
+        from apps.defects.services import guess_category
+
+        for d in Defect.objects.filter(number__startswith="DEF-2026-").select_related("current_risk"):
+            changed = []
+            if d.category_id is None:
+                d.category_id = guess_category(d.defect_type) or "other"
+                changed.append("category")
+            if not d.priority and d.current_risk_id:
+                d.priority = PRIORITY_BY_RISK[d.current_risk.category]
+                changed.append("priority")
+            if changed:
+                d.save(update_fields=changed)
