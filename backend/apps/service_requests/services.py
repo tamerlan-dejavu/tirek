@@ -4,6 +4,7 @@ from rest_framework.exceptions import ValidationError
 
 from apps.audit.models import AuditAction
 from apps.audit.services import log
+from apps.core import numbering
 from apps.core.state_machine import assert_transition
 from apps.defects import services as defect_services
 from apps.defects.models import Defect
@@ -33,9 +34,7 @@ STATUS_TEXT = {
 
 
 def next_number() -> str:
-    year = timezone.now().year
-    count = ServiceRequest.objects.filter(number__startswith=f"REQ-{year}-").count() + 1
-    return f"REQ-{year}-{count:04d}"
+    return numbering.next_number(ServiceRequest, "REQ")
 
 
 def _notify_author(req: ServiceRequest, title: str, body: str = "") -> None:

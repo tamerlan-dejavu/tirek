@@ -4,15 +4,14 @@ from rest_framework.exceptions import ValidationError
 
 from apps.audit.models import AuditAction
 from apps.audit.services import log
+from apps.core import numbering
 from apps.core.state_machine import assert_transition
 
 from .models import TRANSITIONS, Defect, DefectEvent, DefectStatus
 
 
 def next_number() -> str:
-    year = timezone.now().year
-    count = Defect.objects.filter(number__startswith=f"DEF-{year}-").count() + 1
-    return f"DEF-{year}-{count:04d}"
+    return numbering.next_number(Defect, "DEF")
 
 
 @transaction.atomic

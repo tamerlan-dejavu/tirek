@@ -128,3 +128,13 @@ def test_maintenance_rules_reference(world):
     body = {"months": [3, 9]}
     assert client_for(world.engineer_a).patch(url, body, format="json").status_code == 403
     assert client_for(world.admin_a).patch(url, body, format="json").status_code == 200
+
+
+def test_numbers_skip_gaps(world):
+    from django.utils import timezone
+
+    from apps.workorders.services import next_number
+
+    year = timezone.now().year
+    WorkOrder.objects.create(number=f"WO-{year}-0006", building=world.building, title="x", basis="x")
+    assert next_number() == f"WO-{year}-0007"

@@ -4,6 +4,7 @@ from rest_framework.exceptions import ValidationError
 
 from apps.audit.models import AuditAction
 from apps.audit.services import log
+from apps.core import numbering
 from apps.core.state_machine import assert_transition
 from apps.defects.models import Defect, DefectStatus
 
@@ -18,9 +19,7 @@ from .models import (
 
 
 def next_number() -> str:
-    year = timezone.now().year
-    count = Inspection.objects.filter(number__startswith=f"INS-{year}-").count() + 1
-    return f"INS-{year}-{count:04d}"
+    return numbering.next_number(Inspection, "INS")
 
 
 def missing_required(inspection: Inspection) -> list[dict]:
