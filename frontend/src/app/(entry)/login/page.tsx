@@ -1,16 +1,22 @@
 "use client";
 
+import { ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState, type FormEvent } from "react";
 
+import { AuthFrame } from "@/components/auth/AuthFrame";
+import { RolePicker } from "@/components/auth/RolePicker";
+import { Logo } from "@/components/brand/Logo";
 import { Field } from "@/components/forms/Field";
 import { Button } from "@/components/ui/Button";
+import { Loading } from "@/components/ui/States";
 import { api, ApiError } from "@/lib/api/client";
-import type { Me } from "@/lib/api/types";
-import { isCustomerOnly } from "@/lib/permissions";
+import { useApi } from "@/lib/api/hooks";
+import type { DemoAccount, Me } from "@/lib/api/types";
+import { homeFor } from "@/lib/permissions";
 
-function LoginForm() {
+function EmailLoginForm({ compact = false }: { compact?: boolean }) {
   const router = useRouter();
   const params = useSearchParams();
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +32,7 @@ function LoginForm() {
         method: "POST",
         body: { email: form.get("email"), password: form.get("password") },
       });
-      router.replace(params.get("next") ?? (isCustomerOnly(me) ? "/osi" : "/dashboard"));
+      router.replace(params.get("next") ?? homeFor(me));
     } catch (err) {
       setError(
         err instanceof ApiError && err.status === 429
@@ -40,11 +46,13 @@ function LoginForm() {
 
   return (
     <form onSubmit={onSubmit} className="space-y-5">
-      <div>
-        <div className="label-tech mb-2">Платформа инженерного сопровождения</div>
-        <h1 className="text-[28px] font-semibold tracking-[-0.02em]">Вход в Tirek</h1>
-        <p className="mt-1.5 text-sm text-muted">Доступ выдаёт администратор вашей организации по приглашению.</p>
-      </div>
+      {!compact && (
+        <div>
+          <div className="label-tech mb-2">Платформа инженерного сопровождения</div>
+          <h1 className="text-[28px] font-semibold tracking-[-0.02em]">Вход в Tirek</h1>
+          <p className="mt-1.5 text-sm text-muted">Доступ выдаёт администратор вашей организации по приглашению.</p>
+        </div>
+      )}
       <Field label="Email" name="email" type="email" autoComplete="username" required />
       <Field label="Пароль" name="password" type="password" autoComplete="current-password" required />
       {error && (
@@ -67,10 +75,75 @@ function LoginForm() {
   );
 }
 
+/** Demo stand: «Кто вы?» — choose a role, the email form stays available below. */
+function DemoEntry({ accounts }: { accounts: DemoAccount[] }) {
+  const router = useRouter();
+  const params = useSearchParams();
+  const [showEmail, setShowEmail] = useState(false);
+
+  return (
+    <div className="min-h-dvh bg-base">
+      <header className="border-b border-line">
+        <div className="mx-auto flex max-w-[1240px] items-center justify-between px-5 py-4 md:px-8">
+          <Link href="/" aria-label="Tirek — главная">
+            <Logo />
+          </Link>
+          <span className="rounded-md border border-line px-2.5 py-1 font-mono text-[11px] text-muted uppercase">
+            Демо-стенд
+          </span>
+        </div>
+      </header>
+      <main className="mx-auto max-w-[1240px] px-5 py-12 md:px-8 md:py-16">
+        <div className="max-w-2xl">
+          <div className="label-tech mb-3">Вход в Tirek</div>
+          <h1 className="text-[clamp(2rem,4.5vw,3rem)] leading-[1.05] font-bold tracking-[-0.035em]">Кто вы?</h1>
+          <p className="mt-4 text-[17px] leading-relaxed text-muted">
+            Выберите роль — откроется рабочее место с демонстрационными данными. Сменить роль можно в любой момент из
+            верхней панели.
+          </p>
+        </div>
+        <div className="mt-10">
+          <RolePicker accounts={accounts} onSignedIn={(home) => router.replace(params.get("next") ?? home)} />
+        </div>
+        <div className="mt-12 max-w-sm border-t border-line pt-6">
+          <button
+            onClick={() => setShowEmail((v) => !v)}
+            aria-expanded={showEmail}
+            className="flex items-center gap-2 text-sm text-muted hover:text-ink"
+          >
+            У меня есть учётная запись — войти по email
+            <ChevronDown className={showEmail ? "size-4 rotate-180 transition-transform" : "size-4 transition-transform"} />
+          </button>
+          {showEmail && (
+            <div className="mt-5">
+              <EmailLoginForm compact />
+            </div>
+          )}
+        </div>
+        <p className="mt-12 max-w-2xl text-xs text-faint">
+          Демо-стенд: все дома, люди и записи вымышлены. Беспарольный вход работает только для демонстрационных
+          аккаунтов и отключается в рабочей среде.
+        </p>
+      </main>
+    </div>
+  );
+}
+
+function LoginScreen() {
+  const demo = useApi<{ enabled: boolean; accounts: DemoAccount[] }>("auth/demo/", ["demo"]);
+  if (demo.isLoading) return <Loading />;
+  if (demo.data?.enabled && demo.data.accounts.length) return <DemoEntry accounts={demo.data.accounts} />;
+  return (
+    <AuthFrame>
+      <EmailLoginForm />
+    </AuthFrame>
+  );
+}
+
 export default function LoginPage() {
   return (
     <Suspense>
-      <LoginForm />
+      <LoginScreen />
     </Suspense>
   );
 }

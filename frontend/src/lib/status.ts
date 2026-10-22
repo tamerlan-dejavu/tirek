@@ -129,3 +129,31 @@ export function relativeDue(iso: string | null | undefined): string {
   if (d < 0) return `просрочено на ${-d} дн.`;
   return `через ${d} дн.`;
 }
+
+export const REQUEST_STATUS: Record<"new" | "accepted" | "in_progress" | "resolved" | "rejected", StatusMeta> = {
+  new: { label: "Новая", tone: "warning" },
+  accepted: { label: "Принята", tone: "accent" },
+  in_progress: { label: "В работе", tone: "info" },
+  resolved: { label: "Решена", tone: "healthy" },
+  rejected: { label: "Отклонена", tone: "neutral" },
+};
+export const REQUEST_FLOW = ["new", "accepted", "in_progress", "resolved"] as const;
+
+export const REQUEST_CATEGORIES: { value: string; label: string }[] = [
+  { value: "leak", label: "Протечка, затопление" },
+  { value: "heating", label: "Отопление" },
+  { value: "water", label: "Водоснабжение" },
+  { value: "sewerage", label: "Канализация" },
+  { value: "electrical", label: "Электричество" },
+  { value: "elevator", label: "Лифт" },
+  { value: "roof", label: "Кровля, чердак" },
+  { value: "facade", label: "Фасад, балконы" },
+  { value: "common_areas", label: "Подъезд, общие помещения" },
+  { value: "other", label: "Другое" },
+];
+
+/** "3 ч", "2 дн." — how long a request has been waiting. */
+export function age(iso: string): string {
+  const h = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 3_600_000));
+  return h < 24 ? `${h} ч` : `${Math.round(h / 24)} дн.`;
+}

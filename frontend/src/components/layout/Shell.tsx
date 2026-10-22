@@ -5,9 +5,9 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 
 import { useMe } from "@/lib/api/hooks";
-import { isCustomerOnly } from "@/lib/permissions";
+import { isCustomerOnly, isResidentOnly } from "@/lib/permissions";
 
-import { OSI_NAV, Sidebar, type NavGroup } from "./Sidebar";
+import { OSI_NAV, RESIDENT_NAV, Sidebar, type NavGroup } from "./Sidebar";
 import { Topbar } from "./Topbar";
 
 /**
@@ -19,7 +19,7 @@ export function Shell({ nav: navProp, children }: { nav: NavGroup[]; children: R
   const pathname = usePathname();
   const { data: me } = useMe();
   // Shared pages (e.g. settings) must not show provider navigation to a customer
-  const nav = isCustomerOnly(me) ? OSI_NAV : navProp;
+  const nav = isResidentOnly(me) ? RESIDENT_NAV : isCustomerOnly(me) ? OSI_NAV : navProp;
   useEffect(() => setOpen(false), [pathname]);
 
   return (
