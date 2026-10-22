@@ -67,7 +67,7 @@ export default function BuildingLayout({ children, params }: { children: ReactNo
           <Field label="Конструктивная схема">{b ? SCHEME[b.structural_scheme] ?? b.structural_scheme : "—"}</Field>
           <Field label="Последнее утв. обследование">
             {last ? (
-              <span className="inline-flex items-center gap-2">
+              <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
                 <span className="font-mono">{formatDate(last.approved_at)}</span>
                 <ApprovalTag approved>{last.number}</ApprovalTag>
               </span>

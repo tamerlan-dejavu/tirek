@@ -2,7 +2,13 @@ from rest_framework import serializers
 
 from apps.organizations.models import Organization, OrganizationMembership, OrganizationType, Role
 
-from .models import Building, BuildingDocument, BuildingElement, ElementType
+from .models import (
+    Building,
+    BuildingDocument,
+    BuildingElement,
+    BuildingPassportEntry,
+    ElementType,
+)
 
 
 class BuildingSerializer(serializers.ModelSerializer):
@@ -115,3 +121,48 @@ class BuildingDocumentSerializer(serializers.ModelSerializer):
             "created_at",
         ]
         read_only_fields = ["id", "created_at"]
+
+
+class PassportEntrySerializer(serializers.ModelSerializer):
+    element_name = serializers.CharField(source="element_type.name", read_only=True)
+    group = serializers.CharField(source="element_type.group", read_only=True)
+    updated_by_name = serializers.SerializerMethodField()
+    # How the entry relates to the rest of the record: elements on the schematic, open defects
+    elements_count = serializers.SerializerMethodField()
+    open_defects = serializers.SerializerMethodField()
+
+    class Meta:
+        model = BuildingPassportEntry
+        fields = [
+            "id",
+            "building",
+            "element_type",
+            "element_name",
+            "group",
+            "presence",
+            "quantity",
+            "characteristics",
+            "source",
+            "updated_by_name",
+            "updated_at",
+            "elements_count",
+            "open_defects",
+        ]
+        read_only_fields = ["id", "building", "element_type", "updated_at"]
+
+    def get_updated_by_name(self, obj):
+        return str(obj.updated_by) if obj.updated_by_id else None
+
+    def get_elements_count(self, obj):
+        return self.context.get("elements", {}).get(obj.element_type_id, 0)
+
+    def get_open_defects(self, obj):
+        return self.context.get("defects", {}).get(obj.element_type_id, 0)
+
+    def validate(self, attrs):
+        presence = attrs.get("presence", getattr(self.instance, "presence", None))
+        if presence != "present" and attrs.get("quantity"):
+            raise serializers.ValidationError(
+                {"quantity": "Количество указывается, только если элемент есть."}
+            )
+        return attrs
