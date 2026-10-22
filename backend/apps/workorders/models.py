@@ -59,6 +59,58 @@ EXECUTOR_TARGETS = {S.IN_PROGRESS, S.DONE}
 REASON_REQUIRED = {S.REJECTED, S.POSTPONED, S.CANCELLED}
 
 
+class WorkKind(models.TextChoices):
+    REACTIVE = "reactive", "Устранение дефекта"
+    PREVENTIVE = "preventive", "Профилактика"
+
+
+class WorkType(models.TextChoices):
+    INSPECTION = "inspection", "Осмотр"
+    MAINTENANCE = "maintenance", "Техническое обслуживание"
+    CLEANING = "cleaning", "Очистка, прочистка"
+    TESTING = "testing", "Проверка, испытания, замеры"
+    PREPARATION = "preparation", "Подготовка к сезону"
+    SEALING = "sealing", "Герметизация"
+    REPAIR = "repair", "Ремонт"
+    REPLACEMENT = "replacement", "Замена"
+
+
+class Periodicity(models.TextChoices):
+    ONCE = "once", "Разово"
+    MONTHLY = "monthly", "Ежемесячно"
+    QUARTERLY = "quarterly", "Ежеквартально"
+    SEMIANNUAL = "semiannual", "2 раза в год"
+    ANNUAL = "annual", "Ежегодно"
+    EVERY_3_YEARS = "3y", "Раз в 3 года"
+    EVERY_5_YEARS = "5y", "Раз в 5 лет"
+
+
+class MaintenanceRule(models.Model):
+    """
+    Typical preventive maintenance regulation for an element / system (ППР template).
+    The preliminary plan applies rules to elements that exist in the building passport.
+    Values are a working proposal and must be approved by the engineering organization.
+    """
+
+    element_type = models.ForeignKey(
+        "buildings.ElementType", on_delete=models.PROTECT, related_name="+"
+    )
+    work_type = models.CharField(max_length=16, choices=WorkType.choices)
+    title = models.CharField(max_length=255)
+    periodicity = models.CharField(max_length=12, choices=Periodicity.choices)
+    months = models.JSONField(default=list, help_text="Месяцы выполнения, 1–12")
+    materials = models.TextField(blank=True)
+    labor_hours = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    note = models.CharField(max_length=255, blank=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["element_type__group", "element_type__sort_order", "title"]
+
+    def __str__(self):
+        return self.title
+
+
 class WorkOrder(UUIDModel):
     number = models.CharField(max_length=32, unique=True)  # WO-2026-0001
     building = models.ForeignKey(
@@ -77,6 +129,14 @@ class WorkOrder(UUIDModel):
     )
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
+    kind = models.CharField(max_length=12, choices=WorkKind.choices, default=WorkKind.REACTIVE)
+    work_type = models.CharField(max_length=16, choices=WorkType.choices, blank=True)
+    periodicity = models.CharField(
+        max_length=12, choices=Periodicity.choices, default=Periodicity.ONCE
+    )
+    rule = models.ForeignKey(
+        MaintenanceRule, null=True, blank=True, on_delete=models.PROTECT, related_name="work_orders"
+    )
     priority = models.CharField(max_length=8, choices=Priority.choices, default=Priority.NORMAL)
     recommended_date = models.DateField(null=True, blank=True)
     planned_date = models.DateField(null=True, blank=True, db_index=True)

@@ -4,27 +4,37 @@ from rest_framework.exceptions import ValidationError
 
 from apps.audit.models import AuditAction
 from apps.audit.services import log
+from apps.core import numbering
 from apps.core.state_machine import assert_transition
 from apps.defects import services as defect_services
 from apps.defects.models import Defect
+from apps.files.models import FileKind, FileLink
 from apps.notifications.models import NotificationKind
 from apps.notifications.services import notify
 from apps.organizations.models import BuildingOrganizationLink, OrganizationMembership
 
-from .models import TRANSITIONS, RequestStatus, ServiceRequest, ServiceRequestEvent
+from .models import (
+    TRANSITIONS,
+    RequestPriority,
+    RequestStatus,
+    ServiceRequest,
+    ServiceRequestEvent,
+)
 
+R = RequestStatus
 STATUS_TEXT = {
-    RequestStatus.ACCEPTED: "принята диспетчером",
-    RequestStatus.IN_PROGRESS: "передана в работу",
-    RequestStatus.RESOLVED: "решена",
-    RequestStatus.REJECTED: "отклонена",
+    R.ACCEPTED: "принята диспетчером",
+    R.ASSIGNED: "передана исполнителю",
+    R.IN_PROGRESS: "выполняется",
+    R.DONE: "выполнена, ожидает проверки",
+    R.VERIFIED: "проверена",
+    R.CLOSED: "закрыта",
+    R.REJECTED: "отклонена",
 }
 
 
 def next_number() -> str:
-    year = timezone.now().year
-    count = ServiceRequest.objects.filter(number__startswith=f"REQ-{year}-").count() + 1
-    return f"REQ-{year}-{count:04d}"
+    return numbering.next_number(ServiceRequest, "REQ")
 
 
 def _notify_author(req: ServiceRequest, title: str, body: str = "") -> None:
@@ -58,11 +68,43 @@ def change_status(req: ServiceRequest, target: str, request, comment: str = "") 
     return req
 
 
-def resolve(req: ServiceRequest, request, resolution: str) -> ServiceRequest:
+def note(req: ServiceRequest, request, comment: str) -> None:
+    """Event without a status change (reassignment, priority, linked defect)."""
+    ServiceRequestEvent.objects.create(
+        request=req,
+        from_status=req.status,
+        to_status=req.status,
+        actor=request.user,
+        comment=comment,
+    )
+
+
+def has_result_photo(req: ServiceRequest) -> bool:
+    """A result photo uploaded by staff (not by the resident who reported the problem)."""
+    links = FileLink.objects.for_object(req).filter(file__kind=FileKind.REPAIR_PHOTO)
+    if req.author_id:
+        links = links.exclude(created_by_id=req.author_id)
+    return links.exists()
+
+
+def complete(req: ServiceRequest, request, resolution: str) -> ServiceRequest:
+    """Executor marks the work done: what was done + a result photo (spec §11)."""
     if not resolution.strip():
-        raise ValidationError({"resolution": "Опишите, что сделано."})
+        raise ValidationError({"text": "Опишите, что сделано."})
+    if not has_result_photo(req):
+        raise ValidationError({"files": "Приложите фото результата работ."})
     req.resolution = resolution
-    return change_status(req, RequestStatus.RESOLVED, request, resolution)
+    return change_status(req, R.DONE, request, resolution)
+
+
+def return_to_work(req: ServiceRequest, request, reason: str) -> ServiceRequest:
+    if not reason.strip():
+        raise ValidationError({"text": "Укажите, что не так с результатом."})
+    return change_status(req, R.IN_PROGRESS, request, f"Возврат в работу: {reason}")
+
+
+def default_priority(is_emergency: bool) -> str:
+    return RequestPriority.URGENT if is_emergency else RequestPriority.NORMAL
 
 
 def reject(req: ServiceRequest, request, reason: str) -> ServiceRequest:
@@ -82,7 +124,8 @@ def confirm_emergency(req: ServiceRequest, request) -> ServiceRequest:
         return req
     req.emergency_confirmed_at = timezone.now()
     req.is_emergency = True
-    req.save(update_fields=["emergency_confirmed_at", "is_emergency", "updated_at"])
+    req.priority = RequestPriority.URGENT
+    req.save(update_fields=["emergency_confirmed_at", "is_emergency", "priority", "updated_at"])
     now = timezone.now()
     orgs = (
         BuildingOrganizationLink.objects.filter(building=req.building, valid_from__lte=now)
@@ -141,11 +184,5 @@ def create_defect(req: ServiceRequest, request, element, defect_type: str) -> De
     )
     req.defect = defect
     req.save(update_fields=["defect", "updated_at"])
-    ServiceRequestEvent.objects.create(
-        request=req,
-        from_status=req.status,
-        to_status=req.status,
-        actor=request.user,
-        comment=f"Создан дефект {defect.number} для инженерной проверки",
-    )
+    note(req, request, f"Создан дефект {defect.number} для инженерной проверки")
     return defect

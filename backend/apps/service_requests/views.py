@@ -17,19 +17,45 @@ from apps.organizations.models import (
 from apps.workorders.models import WorkOrder, WorkOrderStatus
 
 from . import services
-from .models import OPEN_REQUEST_STATUSES, Poll, PollOption, PollVote, RequestStatus, ServiceRequest
+from .models import (
+    ACTIVE_WORK_STATUSES,
+    OPEN_REQUEST_STATUSES,
+    Poll,
+    PollOption,
+    PollVote,
+    RequestSource,
+    RequestStatus,
+    ServiceRequest,
+)
 from .serializers import (
     AssignSerializer,
     CreateDefectSerializer,
     PollSerializer,
+    PrioritySerializer,
     ServiceRequestEventSerializer,
     ServiceRequestSerializer,
     TextSerializer,
 )
 
+R = RequestStatus
 DISPATCH = (Role.DISPATCHER, Role.PROVIDER_ADMIN)
-# Who may register a request on behalf of a resident (phone call)
-REGISTRARS = (Role.DISPATCHER, Role.PROVIDER_ADMIN, Role.OSI_REPRESENTATIVE)
+# Spec §11 sources: resident, specialist, dispatcher, engineer (and the ОСИ representative)
+REGISTRARS = (
+    Role.DISPATCHER,
+    Role.PROVIDER_ADMIN,
+    Role.OSI_REPRESENTATIVE,
+    Role.FIELD_SPECIALIST,
+    Role.REVIEWING_ENGINEER,
+)
+SOURCE_BY_ROLE = [
+    (Role.DISPATCHER, RequestSource.DISPATCHER),
+    (Role.PROVIDER_ADMIN, RequestSource.DISPATCHER),
+    (Role.REVIEWING_ENGINEER, RequestSource.ENGINEER),
+    (Role.FIELD_SPECIALIST, RequestSource.SPECIALIST),
+    (Role.OSI_REPRESENTATIVE, RequestSource.OSI),
+]
+# Checking the result: the engineer or the dispatcher, never the executor themselves
+VERIFIERS = (Role.REVIEWING_ENGINEER, *DISPATCH)
 ASSIGNABLE = [Role.FIELD_SPECIALIST, Role.PRODUCTION_PLANNER, Role.REVIEWING_ENGINEER]
 POLL_ORGANIZERS = (Role.OSI_REPRESENTATIVE, Role.PROVIDER_ADMIN)
 
@@ -41,7 +67,15 @@ class ServiceRequestViewSet(
     viewsets.GenericViewSet,
 ):
     serializer_class = ServiceRequestSerializer
-    filterset_fields = ["building", "status", "category", "is_emergency", "assignee"]
+    filterset_fields = [
+        "building",
+        "status",
+        "category",
+        "is_emergency",
+        "assignee",
+        "priority",
+        "source",
+    ]
     search_fields = ["number", "description", "building__address", "apartment"]
     ordering_fields = ["created_at", "due_date"]
 
@@ -54,14 +88,18 @@ class ServiceRequestViewSet(
     def perform_create(self, serializer):
         user = self.request.user
         building = serializer.validated_data["building"]
-        is_resident = access.resident_building_ids(user).filter(id=building.pk).exists()
-        if not is_resident:
-            access.require(
-                user, building.pk, *REGISTRARS, message="Вы не можете подать заявку по этому дому."
-            )
+        roles = access.roles_for_building(user, building.pk)
+        staff_source = next((src for role, src in SOURCE_BY_ROLE if role in roles), None)
+        is_resident = staff_source is None and (
+            access.resident_building_ids(user).filter(id=building.pk).exists()
+        )
+        if not is_resident and staff_source is None:
+            raise PermissionDenied("Вы не можете подать заявку по этому дому.")
         serializer.save(
             number=services.next_number(),
             author=user if is_resident else None,
+            source=RequestSource.RESIDENT if is_resident else staff_source,
+            priority=services.default_priority(serializer.validated_data.get("is_emergency")),
             created_by=user,
         )
 
@@ -76,43 +114,100 @@ class ServiceRequestViewSet(
             ServiceRequestEventSerializer(self.get_object().events.all(), many=True).data
         )
 
+    def _text(self):
+        data = TextSerializer(data=self.request.data)
+        data.is_valid(raise_exception=True)
+        return data.validated_data["text"]
+
+    def _executor_or_dispatcher(self, req):
+        if req.assignee_id != self.request.user.pk:
+            self._dispatcher(req)
+
     @action(detail=True, methods=["post"])
     def accept(self, request, pk=None):
         req = self.get_object()
         self._dispatcher(req)
-        data = TextSerializer(data=request.data)
+        services.change_status(req, R.ACCEPTED, request, self._text())
+        return Response(self.get_serializer(req).data)
+
+    @action(detail=True, methods=["post"])
+    def prioritize(self, request, pk=None):
+        req = self.get_object()
+        self._dispatcher(req)
+        data = PrioritySerializer(data=request.data)
         data.is_valid(raise_exception=True)
-        services.change_status(req, RequestStatus.ACCEPTED, request, data.validated_data["text"])
+        priority = data.validated_data["priority"]
+        if priority != req.priority:
+            req.priority = priority
+            req.save(update_fields=["priority", "updated_at"])
+            services.note(req, request, f"Приоритет: {req.get_priority_display().lower()}")
         return Response(self.get_serializer(req).data)
 
     @action(detail=True, methods=["post"])
     def assign(self, request, pk=None):
-        """Distribute the task: executor and deadline; moves the request into work."""
+        """Distribute the task: executor, deadline, priority. Reassignment keeps the status."""
         req = self.get_object()
         self._dispatcher(req)
+        if req.status not in (R.NEW, R.ACCEPTED, *ACTIVE_WORK_STATUSES):
+            raise ValidationError("Заявку на этом этапе нельзя переназначить.")
         data = AssignSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         assignee = data.validated_data["assignee"]
         if not access.has_role(assignee, req.building_id, *ASSIGNABLE):
             raise ValidationError({"assignee": "Исполнитель не обслуживает этот дом."})
+        reassigned = req.assignee_id is not None and req.assignee_id != assignee.pk
         req.assignee = assignee
         req.due_date = data.validated_data.get("due_date")
-        req.save(update_fields=["assignee", "due_date", "updated_at"])
-        if req.status == RequestStatus.NEW:
-            services.change_status(req, RequestStatus.ACCEPTED, request)
+        if data.validated_data.get("priority"):
+            req.priority = data.validated_data["priority"]
+        req.save(update_fields=["assignee", "due_date", "priority", "updated_at"])
         comment = data.validated_data["comment"] or f"Исполнитель: {assignee}"
-        if req.status == RequestStatus.ACCEPTED:
-            services.change_status(req, RequestStatus.IN_PROGRESS, request, comment)
+        if req.status == R.NEW:
+            services.change_status(req, R.ACCEPTED, request)
+        if req.status == R.ACCEPTED:
+            services.change_status(req, R.ASSIGNED, request, comment)
+        elif reassigned:
+            services.note(req, request, f"Переназначена. {comment}")
         return Response(self.get_serializer(req).data)
 
     @action(detail=True, methods=["post"])
-    def resolve(self, request, pk=None):
+    def start(self, request, pk=None):
         req = self.get_object()
-        if req.assignee_id != request.user.pk:
-            self._dispatcher(req)
-        data = TextSerializer(data=request.data)
-        data.is_valid(raise_exception=True)
-        services.resolve(req, request, data.validated_data["text"])
+        self._executor_or_dispatcher(req)
+        services.change_status(req, R.IN_PROGRESS, request, self._text())
+        return Response(self.get_serializer(req).data)
+
+    @action(detail=True, methods=["post"])
+    def complete(self, request, pk=None):
+        """Executor: work done. Requires a description and a result photo."""
+        req = self.get_object()
+        self._executor_or_dispatcher(req)
+        services.complete(req, request, self._text())
+        return Response(self.get_serializer(req).data)
+
+    @action(detail=True, methods=["post"])
+    def verify(self, request, pk=None):
+        req = self.get_object()
+        access.require(
+            request.user, req.building_id, *VERIFIERS, message="Проверяет инженер или диспетчер."
+        )
+        if req.assignee_id == request.user.pk:
+            raise PermissionDenied("Исполнитель не может сам проверить свою работу.")
+        services.change_status(req, R.VERIFIED, request, self._text())
+        return Response(self.get_serializer(req).data)
+
+    @action(detail=True, methods=["post"], url_path="return")
+    def return_to_work(self, request, pk=None):
+        req = self.get_object()
+        access.require(request.user, req.building_id, *VERIFIERS)
+        services.return_to_work(req, request, self._text())
+        return Response(self.get_serializer(req).data)
+
+    @action(detail=True, methods=["post"])
+    def close(self, request, pk=None):
+        req = self.get_object()
+        self._dispatcher(req)
+        services.change_status(req, R.CLOSED, request, self._text())
         return Response(self.get_serializer(req).data)
 
     @action(detail=True, methods=["post"])
@@ -170,7 +265,7 @@ class ServiceRequestViewSet(
                     "name": str(u),
                     "position": u.position,
                     "open_tasks": u.assigned_service_requests.filter(
-                        status__in=OPEN_REQUEST_STATUSES
+                        status__in=ACTIVE_WORK_STATUSES
                     ).count(),
                 }
                 for u in users

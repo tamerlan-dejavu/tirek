@@ -11,11 +11,11 @@ import type { DefectStatus, InspectionStatus, RiskCategory, WorkOrderStatus } fr
 
 export type Tone = "critical" | "warning" | "healthy" | "info" | "neutral" | "accent";
 
-export const RISK: Record<RiskCategory, { label: string; short: string; level: 1 | 2 | 3 | 4 }> = {
-  R1: { label: "R1 · критический", short: "Критический", level: 4 },
-  R2: { label: "R2 · высокий", short: "Высокий", level: 3 },
-  R3: { label: "R3 · средний", short: "Средний", level: 2 },
-  R4: { label: "R4 · низкий", short: "Низкий", level: 1 },
+export const RISK: Record<RiskCategory, { label: string; short: string; level: 1 | 2 | 3 | 4; action: string }> = {
+  R1: { label: "R1 · критический", short: "Критический", level: 4, action: "Требуется немедленная реакция" },
+  R2: { label: "R2 · высокий", short: "Высокий", level: 3, action: "Первоочередное включение в план работ" },
+  R3: { label: "R3 · средний", short: "Средний", level: 2, action: "Плановое устранение" },
+  R4: { label: "R4 · низкий", short: "Низкий", level: 1, action: "Наблюдение и профилактический контроль" },
 };
 export const RISK_ORDER: RiskCategory[] = ["R1", "R2", "R3", "R4"];
 
@@ -84,6 +84,29 @@ export const ELEMENT_GROUP: Record<string, string> = {
 
 export const OPEN_WORK: WorkOrderStatus[] = ["proposed", "agreed", "scheduled", "in_progress", "postponed"];
 
+/** Spec §10 — mirrors backend workorders/models.py */
+export const WORK_TYPE: Record<string, string> = {
+  inspection: "Осмотр",
+  maintenance: "Техническое обслуживание",
+  cleaning: "Очистка, прочистка",
+  testing: "Проверка, замеры",
+  preparation: "Подготовка к сезону",
+  sealing: "Герметизация",
+  repair: "Ремонт",
+  replacement: "Замена",
+};
+export const PERIODICITY: Record<string, string> = {
+  once: "Разово",
+  monthly: "Ежемесячно",
+  quarterly: "Ежеквартально",
+  semiannual: "2 раза в год",
+  annual: "Ежегодно",
+  "3y": "Раз в 3 года",
+  "5y": "Раз в 5 лет",
+};
+export const WORK_KIND = { reactive: "Устранение дефекта", preventive: "Профилактика" } as const;
+export const MONTHS_SHORT = ["янв", "фев", "мар", "апр", "май", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"];
+
 /** Value or «неизвестно» — the UI never invents technical data (ТЗ 5.3, 11.5). */
 export function orUnknown(value: unknown, unit?: string): string {
   if (value === null || value === undefined || value === "") return "неизвестно";
@@ -130,14 +153,26 @@ export function relativeDue(iso: string | null | undefined): string {
   return `через ${d} дн.`;
 }
 
-export const REQUEST_STATUS: Record<"new" | "accepted" | "in_progress" | "resolved" | "rejected", StatusMeta> = {
+/** Spec §11 — mirrors backend service_requests/models.py */
+export const REQUEST_STATUS: Record<"new" | "accepted" | "assigned" | "in_progress" | "done" | "verified" | "closed" | "rejected", StatusMeta> = {
   new: { label: "Новая", tone: "warning" },
   accepted: { label: "Принята", tone: "accent" },
-  in_progress: { label: "В работе", tone: "info" },
-  resolved: { label: "Решена", tone: "healthy" },
+  assigned: { label: "Назначена", tone: "accent" },
+  in_progress: { label: "Выполняется", tone: "info" },
+  done: { label: "Выполнена", tone: "info" },
+  verified: { label: "Проверена", tone: "healthy" },
+  closed: { label: "Закрыта", tone: "healthy" },
   rejected: { label: "Отклонена", tone: "neutral" },
 };
-export const REQUEST_FLOW = ["new", "accepted", "in_progress", "resolved"] as const;
+export const REQUEST_FLOW = ["new", "accepted", "assigned", "in_progress", "done", "verified", "closed"] as const;
+export const OPEN_REQUEST = ["new", "accepted", "assigned", "in_progress", "done", "verified"];
+export const REQUEST_PRIORITY: Record<"urgent" | "high" | "normal" | "low", StatusMeta> = {
+  urgent: { label: "Аварийный", tone: "critical" },
+  high: { label: "Высокий", tone: "warning" },
+  normal: { label: "Обычный", tone: "neutral" },
+  low: { label: "Низкий", tone: "neutral" },
+};
+export const REQUEST_PRIORITY_ORDER = { urgent: 0, high: 1, normal: 2, low: 3 } as const;
 
 export const REQUEST_CATEGORIES: { value: string; label: string }[] = [
   { value: "leak", label: "Протечка, затопление" },

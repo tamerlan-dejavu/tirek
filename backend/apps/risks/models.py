@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 from apps.core.models import ProtectedHistoryModel
@@ -16,6 +17,22 @@ class RiskAssessment(ProtectedHistoryModel):
         "defects.Defect", on_delete=models.PROTECT, related_name="risk_assessments"
     )
     category = models.CharField(max_length=2, choices=RiskCategory.choices)
+    # Scoring aid (methodology.py): factors 1–5, their product and the suggested category.
+    # The engineer's `category` is final; a difference from `suggested_category` is an override.
+    probability = models.PositiveSmallIntegerField(
+        null=True, blank=True, validators=[MinValueValidator(1), MaxValueValidator(5)]
+    )
+    consequences = models.PositiveSmallIntegerField(
+        null=True, blank=True, validators=[MinValueValidator(1), MaxValueValidator(5)]
+    )
+    condition = models.PositiveSmallIntegerField(
+        null=True, blank=True, validators=[MinValueValidator(1), MaxValueValidator(5)]
+    )
+    service_life = models.PositiveSmallIntegerField(
+        null=True, blank=True, validators=[MinValueValidator(1), MaxValueValidator(5)]
+    )
+    score = models.PositiveSmallIntegerField(null=True, blank=True)
+    suggested_category = models.CharField(max_length=2, choices=RiskCategory.choices, blank=True)
     hazard_description = models.TextField("Описание опасности")
     justification = models.TextField("Обоснование")
     recommended_actions = models.TextField("Рекомендуемые действия")

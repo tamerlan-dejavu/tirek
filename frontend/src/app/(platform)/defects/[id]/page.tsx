@@ -6,6 +6,7 @@ import { use, useState, type FormEvent } from "react";
 import { EvidenceGallery } from "@/components/defects/EvidenceGallery";
 import { MediaUpload } from "@/components/files/MediaUpload";
 import { LifecycleStepper } from "@/components/defects/LifecycleStepper";
+import { RiskScoring, scoreOf, type Factors } from "@/components/defects/RiskScoring";
 import { WorkOrderTable } from "@/components/lists/WorkOrderList";
 import { ApprovalTag, RiskBadge, StatusBadge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -16,7 +17,7 @@ import type { Paginated } from "@/lib/api/client";
 import { useAction, useApi, useMe } from "@/lib/api/hooks";
 import type { Building, Defect, RiskCategory, WorkOrder } from "@/lib/api/types";
 import { can, roles } from "@/lib/permissions";
-import { DEFECT_PRIORITY, DEFECT_STATUS, formatDate, formatDateTime, RISK_ORDER } from "@/lib/status";
+import { DEFECT_PRIORITY, DEFECT_STATUS, formatDate, formatDateTime, RISK, RISK_ORDER } from "@/lib/status";
 
 interface Observation {
   id: string;
@@ -42,6 +43,13 @@ interface Risk {
   revision_reason: string;
   engineer_name: string;
   version: number;
+  probability: number | null;
+  consequences: number | null;
+  condition: number | null;
+  service_life: number | null;
+  score: number | null;
+  suggested_category: RiskCategory | "";
+  is_override: boolean;
   created_at: string;
 }
 
@@ -60,7 +68,7 @@ export default function DefectPage({ params }: { params: Promise<{ id: string }>
   const work = useApi<Paginated<WorkOrder>>(`work-orders/?defect=${id}`);
 
   const keys = [[`defects/${id}/`], [`defects/${id}/events/`], [`risk-assessments/?defect=${id}`], [`defects/${id}/observations/`]];
-  const assess = useAction<Record<string, string>>("risk-assessments/", keys);
+  const assess = useAction<Record<string, string | number>>("risk-assessments/", keys);
   const clarify = useAction<{ comment: string }>(`defects/${id}/request-clarification/`, keys);
   const reject = useAction<{ reason: string }>(`defects/${id}/reject/`, keys);
   const close = useAction<{ basis: string }>(`defects/${id}/close/`, keys);
@@ -69,6 +77,7 @@ export default function DefectPage({ params }: { params: Promise<{ id: string }>
   const actionError = setPriority.error ?? assess.error ?? clarify.error ?? reject.error ?? close.error ?? observe.error;
 
   const [riskForm, setRiskForm] = useState({ category: "R3", hazard_description: "", justification: "", recommended_actions: "", revision_reason: "" });
+  const [factors, setFactors] = useState<Factors>({});
   const [note, setNote] = useState("");
   const [revising, setRevising] = useState(false);
   const [obs, setObs] = useState({ description: "", trend: "same" });
@@ -82,7 +91,8 @@ export default function DefectPage({ params }: { params: Promise<{ id: string }>
   function submitRisk(e: FormEvent) {
     e.preventDefault();
     const { revision_reason, ...rest } = riskForm;
-    assess.mutate({ defect: id, ...rest, ...(current ? { revision_reason } : {}) });
+    const scored = scoreOf(factors) ? (factors as Record<string, number>) : {};
+    assess.mutate({ defect: id, ...rest, ...scored, ...(current ? { revision_reason } : {}) });
   }
 
   return (
@@ -216,6 +226,12 @@ export default function DefectPage({ params }: { params: Promise<{ id: string }>
                         </span>
                         {i === 0 && <ApprovalTag approved>Действует</ApprovalTag>}
                       </div>
+                      {ra.score !== null && (
+                        <p className="mt-2 font-mono text-[11px] text-muted">
+                          {ra.probability}×{ra.consequences}×{ra.condition}×{ra.service_life} = {ra.score} · расчёт {ra.suggested_category}
+                          {ra.is_override && <span className="text-warning-ink"> · решение инженера отличается от расчёта</span>}
+                        </p>
+                      )}
                       <p className="mt-2 text-sm"><span className="text-muted">Опасность: </span>{ra.hazard_description}</p>
                       <p className="mt-1 text-sm"><span className="text-muted">Обоснование: </span>{ra.justification}</p>
                       {ra.revision_reason && <p className="mt-1 text-sm"><span className="text-muted">Причина пересмотра: </span>{ra.revision_reason}</p>}
@@ -234,6 +250,14 @@ export default function DefectPage({ params }: { params: Promise<{ id: string }>
             {isReviewer && (d.status === "in_review" || (current && revising)) && d.status !== "closed" && d.status !== "rejected" && (
               <form onSubmit={submitRisk} className="mt-4 space-y-2.5 border-t border-line pt-4">
                 <div className="label-tech">{current ? "Пересмотреть оценку" : "Подтвердить дефект и риск"}</div>
+                <RiskScoring
+                  value={factors}
+                  onChange={setFactors}
+                  yearBuilt={building.data?.year_built}
+                  chosen={riskForm.category as RiskCategory}
+                  onSuggest={(c) => setRiskForm((f) => ({ ...f, category: c }))}
+                />
+                <div className="text-xs text-muted">Категория риска (решение инженера)</div>
                 <div role="radiogroup" aria-label="Категория риска" className="grid grid-cols-4 gap-1.5">
                   {RISK_ORDER.map((r) => (
                     <button
@@ -248,6 +272,7 @@ export default function DefectPage({ params }: { params: Promise<{ id: string }>
                     </button>
                   ))}
                 </div>
+                <p className="text-xs text-muted">{RISK[riskForm.category as RiskCategory].action}</p>
                 {(["hazard_description", "justification", "recommended_actions"] as const).map((k) => (
                   <textarea
                     key={k}

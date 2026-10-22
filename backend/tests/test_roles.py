@@ -103,10 +103,10 @@ def test_dispatcher_assigns_and_resident_is_notified(roles):
         format="json",
     )
     assert r.status_code == 200, r.content
-    assert r.json()["status"] == RequestStatus.IN_PROGRESS
-    assert Notification.objects.filter(recipient=roles.resident).count() == 2  # accepted, in work
+    assert r.json()["status"] == RequestStatus.ASSIGNED
+    assert Notification.objects.filter(recipient=roles.resident).count() == 2  # accepted, assigned
     events = disp.get(f"/api/v1/service-requests/{req['id']}/events/").json()
-    assert [e["to_status"] for e in events] == ["accepted", "in_progress"]
+    assert [e["to_status"] for e in events] == ["accepted", "assigned"]
 
 
 def test_assignee_must_serve_the_building(roles):

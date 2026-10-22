@@ -4,7 +4,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from apps.audit.models import AuditAction
 from apps.audit.services import log
-from apps.core import access
+from apps.core import access, numbering
 from apps.core.state_machine import assert_transition
 from apps.defects import services as defect_services
 from apps.defects.models import DefectStatus
@@ -30,9 +30,7 @@ DEFECT_SYNC = {
 
 
 def next_number() -> str:
-    year = timezone.now().year
-    count = WorkOrder.objects.filter(number__startswith=f"WO-{year}-").count() + 1
-    return f"WO-{year}-{count:04d}"
+    return numbering.next_number(WorkOrder, "WO")
 
 
 @transaction.atomic

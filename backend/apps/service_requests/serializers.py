@@ -4,7 +4,7 @@ from apps.accounts.models import User
 from apps.buildings.models import BuildingElement
 from apps.core.fields import DisplayNameField
 
-from .models import Poll, PollOption, ServiceRequest, ServiceRequestEvent
+from .models import Poll, PollOption, RequestPriority, ServiceRequest, ServiceRequestEvent
 
 
 class ServiceRequestSerializer(serializers.ModelSerializer):
@@ -13,6 +13,8 @@ class ServiceRequestSerializer(serializers.ModelSerializer):
     assignee_name = DisplayNameField(source="assignee")
     defect_number = serializers.CharField(source="defect.number", read_only=True, default=None)
     category_label = serializers.CharField(source="get_category_display", read_only=True)
+    source_label = serializers.CharField(source="get_source_display", read_only=True)
+    has_result_photo = serializers.SerializerMethodField()
 
     class Meta:
         model = ServiceRequest
@@ -25,6 +27,9 @@ class ServiceRequestSerializer(serializers.ModelSerializer):
             "author_name",
             "category",
             "category_label",
+            "source",
+            "source_label",
+            "priority",
             "entrance",
             "floor",
             "apartment",
@@ -33,6 +38,8 @@ class ServiceRequestSerializer(serializers.ModelSerializer):
             "contact_phone",
             "is_emergency",
             "emergency_confirmed_at",
+            "source",
+            "priority",
             "status",
             "assignee",
             "assignee_name",
@@ -40,6 +47,7 @@ class ServiceRequestSerializer(serializers.ModelSerializer):
             "resolution",
             "defect",
             "defect_number",
+            "has_result_photo",
             "created_at",
             "updated_at",
         ]
@@ -58,6 +66,11 @@ class ServiceRequestSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
 
+    def get_has_result_photo(self, obj) -> bool:
+        from .services import has_result_photo
+
+        return obj.status in ("in_progress", "done", "verified", "closed") and has_result_photo(obj)
+
 
 class ServiceRequestEventSerializer(serializers.ModelSerializer):
     actor_name = DisplayNameField(source="actor")
@@ -71,7 +84,12 @@ class ServiceRequestEventSerializer(serializers.ModelSerializer):
 class AssignSerializer(serializers.Serializer):
     assignee = serializers.PrimaryKeyRelatedField(queryset=User.objects.filter(is_active=True))
     due_date = serializers.DateField(required=False, allow_null=True)
+    priority = serializers.ChoiceField(choices=RequestPriority.choices, required=False)
     comment = serializers.CharField(required=False, allow_blank=True, default="")
+
+
+class PrioritySerializer(serializers.Serializer):
+    priority = serializers.ChoiceField(choices=RequestPriority.choices)
 
 
 class TextSerializer(serializers.Serializer):

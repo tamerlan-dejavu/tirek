@@ -29,7 +29,7 @@ const SEGMENT_LABEL: Record<string, string> = {
   history: "История",
   fill: "Чек-лист",
   new: "Новая запись",
-  requests: "Заявки жителей",
+  requests: "Заявки",
   resident: "Мой дом",
   polls: "Опросы",
   reference: "Справочники",
