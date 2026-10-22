@@ -29,23 +29,44 @@ class RequestCategory(models.TextChoices):
 class RequestStatus(models.TextChoices):
     NEW = "new", "Новая"
     ACCEPTED = "accepted", "Принята"
-    IN_PROGRESS = "in_progress", "В работе"
-    RESOLVED = "resolved", "Решена"
+    ASSIGNED = "assigned", "Назначена"
+    IN_PROGRESS = "in_progress", "Выполняется"
+    DONE = "done", "Выполнена"
+    VERIFIED = "verified", "Проверена"
+    CLOSED = "closed", "Закрыта"
     REJECTED = "rejected", "Отклонена"
 
 
+class RequestPriority(models.TextChoices):
+    URGENT = "urgent", "Аварийный"
+    HIGH = "high", "Высокий"
+    NORMAL = "normal", "Обычный"
+    LOW = "low", "Низкий"
+
+
+class RequestSource(models.TextChoices):
+    RESIDENT = "resident", "Житель"
+    SPECIALIST = "specialist", "Специалист"
+    DISPATCHER = "dispatcher", "Диспетчер"
+    ENGINEER = "engineer", "Инженер"
+    OSI = "osi", "Представитель ОСИ"
+
+
+R = RequestStatus
+# Spec §11: новая → принята → назначена → выполняется → выполнена → проверена → закрыта
 TRANSITIONS: dict[str, set[str]] = {
-    RequestStatus.NEW: {RequestStatus.ACCEPTED, RequestStatus.REJECTED},
-    RequestStatus.ACCEPTED: {
-        RequestStatus.IN_PROGRESS,
-        RequestStatus.RESOLVED,
-        RequestStatus.REJECTED,
-    },
-    RequestStatus.IN_PROGRESS: {RequestStatus.RESOLVED},
-    RequestStatus.RESOLVED: set(),
-    RequestStatus.REJECTED: set(),
+    R.NEW: {R.ACCEPTED, R.REJECTED},
+    R.ACCEPTED: {R.ASSIGNED, R.REJECTED},
+    R.ASSIGNED: {R.IN_PROGRESS},
+    R.IN_PROGRESS: {R.DONE},
+    R.DONE: {R.VERIFIED, R.IN_PROGRESS},  # back to work if the check fails
+    R.VERIFIED: {R.CLOSED},
+    R.CLOSED: set(),
+    R.REJECTED: set(),
 }
-OPEN_REQUEST_STATUSES = [RequestStatus.NEW, RequestStatus.ACCEPTED, RequestStatus.IN_PROGRESS]
+OPEN_REQUEST_STATUSES = [R.NEW, R.ACCEPTED, R.ASSIGNED, R.IN_PROGRESS, R.DONE, R.VERIFIED]
+# Statuses where the executor is still working on the task
+ACTIVE_WORK_STATUSES = [R.ASSIGNED, R.IN_PROGRESS]
 
 
 class ServiceRequest(UUIDModel):
@@ -61,6 +82,12 @@ class ServiceRequest(UUIDModel):
         related_name="service_requests",
     )  # empty when the dispatcher registers a phone call
     category = models.CharField(max_length=16, choices=RequestCategory.choices)
+    source = models.CharField(
+        max_length=12, choices=RequestSource.choices, default=RequestSource.RESIDENT
+    )
+    priority = models.CharField(
+        max_length=8, choices=RequestPriority.choices, default=RequestPriority.NORMAL
+    )
     entrance = models.PositiveSmallIntegerField(null=True, blank=True)
     floor = models.SmallIntegerField(null=True, blank=True)
     apartment = models.CharField(max_length=16, blank=True)

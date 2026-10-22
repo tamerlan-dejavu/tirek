@@ -11,7 +11,7 @@ from apps.core import access
 from apps.organizations.models import OrganizationMembership, Role
 
 from . import services
-from .models import FileLink, StoredFile
+from .models import FileKind, FileLink, StoredFile
 from .serializers import LINK_TARGETS, LinkSerializer, StoredFileSerializer, UploadSerializer
 
 UPLOADERS = (
@@ -102,6 +102,8 @@ class StoredFileViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewse
         if access.roles_for_building(request.user, building.pk) <= {Role.RESIDENT}:
             if v.get("target_type") != "service_request" or target.author_id != request.user.pk:
                 raise PermissionDenied("Файлы можно прикрепить только к своей заявке.")
+            if v["kind"] not in (FileKind.PHOTO, FileKind.VIDEO):
+                raise PermissionDenied("Житель прикладывает фото или видео проблемы.")
 
         organization = (
             OrganizationMembership.objects.filter(
