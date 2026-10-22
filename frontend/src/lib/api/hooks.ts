@@ -17,10 +17,14 @@ export function useMe() {
   return useApi<Me>("auth/me/", ["me"]);
 }
 
-export function useAction<TBody, TResult = unknown>(path: string, invalidate: QueryKey[] = []) {
+export function useAction<TBody, TResult = unknown>(
+  path: string,
+  invalidate: QueryKey[] = [],
+  method: "POST" | "PATCH" = "POST",
+) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: TBody) => api<TResult>(path, { method: "POST", body }),
+    mutationFn: (body: TBody) => api<TResult>(path, { method, body }),
     onSuccess: () => invalidate.forEach((key) => qc.invalidateQueries({ queryKey: key })),
   });
 }

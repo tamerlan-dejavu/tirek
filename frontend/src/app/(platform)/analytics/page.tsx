@@ -57,7 +57,25 @@ export default function AnalyticsPage() {
               </div>
             </Card>
 
-            <Card index="D" title="Где дефекты в процессе?">
+            <Card index="D" title="Какие дефекты встречаются чаще?" className="lg:col-span-2">
+              <BarList
+                unit=" шт."
+                data={Object.entries(b.all_by_category)
+                  .sort((x, y) => y[1] - x[1])
+                  .map(([k, v]) => ({
+                    key: k,
+                    label: k === "null" || !k ? "Без категории" : k,
+                    value: v,
+                    note: `открытых: ${b.open_by_category[k] ?? 0}`,
+                  }))}
+              />
+              <p className="mt-4 border-t border-line pt-3 text-xs text-muted">
+                Все зарегистрированные дефекты по категориям (кроме отклонённых). Это основа для расширения классификации:
+                частые записи в «Прочее» — кандидат в новую категорию. Шкала опасности R1–R4 расширяется только с утверждённой методикой.
+              </p>
+            </Card>
+
+            <Card index="E" title="Где дефекты в процессе?">
               <BarList
                 data={(Object.entries(b.by_status) as [DefectStatus, number][]).map(([s, v]) => ({
                   key: s,
@@ -68,7 +86,7 @@ export default function AnalyticsPage() {
               />
             </Card>
 
-            <Card index="E" title="Как исполняются мероприятия?">
+            <Card index="F" title="Как исполняются мероприятия?">
               <BarList
                 data={(Object.entries(b.work_orders_by_status) as [WorkOrderStatus, number][]).map(([s, v]) => ({
                   key: s,

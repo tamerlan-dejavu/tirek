@@ -19,6 +19,9 @@ const base = {
   created_at: "",
   updated_at: "",
   answer: null,
+  category: null,
+  category_name: null,
+  priority: "" as const,
 };
 
 const DEMO: Defect[] = [
