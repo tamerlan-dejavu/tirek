@@ -31,11 +31,20 @@ export function DueDate({ wo }: { wo: WorkOrder }) {
 }
 
 /** Priority, deadline, basis, author and status visible without opening the record (ТЗ 5.10, 11.4). */
-export function WorkOrderTable({ rows, showBuilding }: { rows: WorkOrder[]; showBuilding?: boolean }) {
+export function WorkOrderTable({
+  rows,
+  showBuilding,
+  onRowClick,
+}: {
+  rows: WorkOrder[];
+  showBuilding?: boolean;
+  onRowClick?: (w: WorkOrder) => void;
+}) {
   return (
     <Table
       caption="Мероприятия"
       rows={rows}
+      onRowClick={onRowClick}
       columns={[
         { key: "n", header: "№", render: (r) => <span className="font-mono text-[13px] text-muted">{r.number}</span> },
         {
