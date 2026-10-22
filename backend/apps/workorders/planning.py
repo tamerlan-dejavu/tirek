@@ -151,6 +151,8 @@ def annual(building_ids, year: int) -> list[dict]:
         row["months"][when.month].append(
             {"id": str(w.pk), "number": w.number, "status": w.status, "date": when.isoformat()}
         )
+    # Defect remediation first within a building, then the regulation by element
     return sorted(
-        rows.values(), key=lambda r: (r["building_code"], r["kind"], r["element"], r["title"])
+        rows.values(),
+        key=lambda r: (r["building_code"], r["kind"] != "reactive", r["element"], r["title"]),
     )
