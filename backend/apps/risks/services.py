@@ -4,7 +4,7 @@ from rest_framework.exceptions import ValidationError
 from apps.audit.models import AuditAction
 from apps.audit.services import log
 from apps.defects import services as defect_services
-from apps.defects.models import Defect, DefectStatus, RiskCategory
+from apps.defects.models import PRIORITY_BY_RISK, Defect, DefectStatus, RiskCategory
 from apps.notifications.services import notify_urgent_defect
 
 from .models import RiskAssessment
@@ -47,7 +47,10 @@ def assess(
     defect.current_risk = assessment
     if not defect.recommendations:
         defect.recommendations = recommended_actions
-    defect.save(update_fields=["current_risk", "recommendations", "updated_at"])
+    if not defect.priority:
+        # Suggested urgency from the danger degree; the engineer can change it afterwards
+        defect.priority = PRIORITY_BY_RISK[category]
+    defect.save(update_fields=["current_risk", "recommendations", "priority", "updated_at"])
     if previous is None:
         defect_services.change_status(defect, DefectStatus.CONFIRMED, request, justification)
 

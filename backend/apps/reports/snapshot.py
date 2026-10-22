@@ -72,6 +72,8 @@ def build_snapshot(inspection: Inspection) -> dict:
                 "element_path": " → ".join(d.element.path),
                 "location": d.location,
                 "type": d.defect_type,
+                "category": d.category.name if d.category_id else "",
+                "priority": d.get_priority_display() if d.priority else "",
                 "description": d.description,
                 "detected_on": d.detected_on.isoformat(),
                 # Preliminary vs approved are kept distinct (ТЗ 5.11, 9.7)
