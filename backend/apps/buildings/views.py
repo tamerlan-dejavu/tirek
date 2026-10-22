@@ -1,3 +1,4 @@
+from django.db.models import Count
 from django.utils import timezone
 from rest_framework import mixins, viewsets
 from rest_framework.decorators import action
@@ -7,16 +8,19 @@ from apps.audit.models import AuditAction
 from apps.audit.services import log
 from apps.core import access
 from apps.core.viewsets import BuildingScopedViewSet
+from apps.defects.models import OPEN_STATUSES, Defect
 from apps.organizations.models import BuildingOrganizationLink, LinkFunction, Role
 
-from .models import Building, BuildingDocument, BuildingElement, ElementType
+from .models import Building, BuildingDocument, BuildingElement, BuildingPassportEntry, ElementType
 from .serializers import (
     BuildingDocumentSerializer,
     BuildingElementSerializer,
     BuildingHistorySerializer,
     BuildingSerializer,
     ElementTypeSerializer,
+    PassportEntrySerializer,
 )
+from .services import ensure_passport
 
 EDITORS = (Role.PROVIDER_ADMIN, Role.REVIEWING_ENGINEER)
 
@@ -45,6 +49,7 @@ class BuildingViewSet(BuildingScopedViewSet):
             function=LinkFunction.TECHNICAL_SUPPORT,
             created_by=self.request.user,
         )
+        ensure_passport(building)
         log(
             AuditAction.BUILDING_CHANGED,
             building,
@@ -130,3 +135,59 @@ class BuildingDocumentViewSet(BuildingScopedViewSet):
             self.request.user, roles=access.PROVIDER_ROLES
         )
         return qs.filter(building__in=provider_buildings) | qs.filter(is_published=True)
+
+
+class PassportEntryViewSet(BuildingScopedViewSet):
+    """
+    Digital passport lines (structural elements, engineering systems, operational elements).
+    Entries exist for every classifier type; they are edited, never created or deleted by hand.
+    The field specialist records technical parameters on site, so may edit too.
+    """
+
+    queryset = BuildingPassportEntry.objects.select_related("element_type", "updated_by")
+    serializer_class = PassportEntrySerializer
+    filterset_fields = ["building", "presence", "element_type__group"]
+    update_roles = EDITORS + (Role.FIELD_SPECIALIST,)
+    http_method_names = ["get", "patch", "head", "options"]
+    pagination_class = None
+
+    def get_serializer_context(self):
+        ctx = super().get_serializer_context()
+        building = self.request.query_params.get("building") or getattr(
+            self.kwargs.get("pk") and self.get_queryset().filter(pk=self.kwargs["pk"]).first(),
+            "building_id",
+            None,
+        )
+        if building:
+            ctx["elements"] = dict(
+                BuildingElement.objects.filter(building_id=building, is_active=True)
+                .values_list("element_type_id")
+                .annotate(n=Count("id"))
+                .order_by()
+            )
+            ctx["defects"] = dict(
+                Defect.objects.filter(building_id=building, status__in=OPEN_STATUSES)
+                .values_list("element__element_type_id")
+                .annotate(n=Count("id"))
+                .order_by()
+            )
+        return ctx
+
+    def perform_update(self, serializer):
+        before = {
+            f: getattr(serializer.instance, f) for f in ("presence", "quantity", "characteristics")
+        }
+        access.require(self.request.user, serializer.instance.building_id, *self.update_roles)
+        entry = serializer.save(updated_by=self.request.user)
+        changed = {
+            f: {"from": before[f], "to": getattr(entry, f)}
+            for f in before
+            if before[f] != getattr(entry, f)
+        }
+        if changed:
+            log(
+                AuditAction.BUILDING_CHANGED,
+                entry.building,
+                request=self.request,
+                changes={"passport": entry.element_type.name, "source": entry.source, **changed},
+            )
