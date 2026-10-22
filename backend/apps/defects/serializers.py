@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from apps.core.fields import DisplayNameField
+
 from .models import Defect, DefectEvent, DefectObservation
 
 
@@ -13,7 +15,7 @@ class DefectSerializer(serializers.ModelSerializer):
     inspection_number = serializers.CharField(
         source="inspection.number", read_only=True, default=None
     )
-    author_name = serializers.CharField(source="created_by.__str__", read_only=True, default=None)
+    author_name = DisplayNameField(source="created_by")
 
     class Meta:
         model = Defect
@@ -95,7 +97,7 @@ class DefectObservationSerializer(serializers.ModelSerializer):
 
 
 class DefectEventSerializer(serializers.ModelSerializer):
-    actor_name = serializers.CharField(source="actor.__str__", read_only=True)
+    actor_name = DisplayNameField(source="actor")
 
     class Meta:
         model = DefectEvent

@@ -2,14 +2,15 @@ from rest_framework import serializers
 
 from apps.accounts.models import User
 from apps.buildings.models import BuildingElement
+from apps.core.fields import DisplayNameField
 
 from .models import Poll, PollOption, ServiceRequest, ServiceRequestEvent
 
 
 class ServiceRequestSerializer(serializers.ModelSerializer):
     building_address = serializers.CharField(source="building.address", read_only=True)
-    author_name = serializers.CharField(source="author.__str__", read_only=True, default=None)
-    assignee_name = serializers.CharField(source="assignee.__str__", read_only=True, default=None)
+    author_name = DisplayNameField(source="author")
+    assignee_name = DisplayNameField(source="assignee")
     defect_number = serializers.CharField(source="defect.number", read_only=True, default=None)
     category_label = serializers.CharField(source="get_category_display", read_only=True)
 
@@ -59,7 +60,7 @@ class ServiceRequestSerializer(serializers.ModelSerializer):
 
 
 class ServiceRequestEventSerializer(serializers.ModelSerializer):
-    actor_name = serializers.CharField(source="actor.__str__", read_only=True)
+    actor_name = DisplayNameField(source="actor")
 
     class Meta:
         model = ServiceRequestEvent

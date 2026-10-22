@@ -238,3 +238,13 @@ def test_demo_login_only_into_registry_accounts(roles, settings):
     assert r.status_code == 200
     assert r.json()["home"] == "/requests"
     assert api.get("/api/v1/auth/me/").json()["email"] == "dispatcher@provider.local"
+
+
+def test_empty_relations_render_as_null_not_method_repr(roles):
+    req = _request(client_for(roles.resident), roles.building).json()
+    assert req["assignee_name"] is None
+    wo = WorkOrder.objects.create(
+        number="WO-T-9", building=roles.building, title="Без автора", basis="x"
+    )
+    row = client_for(roles.engineer_a).get(f"/api/v1/work-orders/{wo.pk}/").json()
+    assert row["author_name"] is None
