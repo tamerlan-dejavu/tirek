@@ -55,8 +55,12 @@ def _fill_and_submit(world, inspection):
     )
     assert r.status_code == 201, r.content
     defect_id = r.json()["id"]
+    assert r.json()["status"] == "detected"  # waits for the inspection to be submitted
     r = field.post(f"/api/v1/inspections/{inspection['id']}/submit/")
     assert r.status_code == 200, r.content
+    # the hand-over to the engineer is part of the defect history
+    events = field.get(f"/api/v1/defects/{defect_id}/events/").json()
+    assert [e["to_status"] for e in events] == ["in_review"]
     return defect_id
 
 

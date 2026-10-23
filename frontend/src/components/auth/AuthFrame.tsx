@@ -39,7 +39,7 @@ export function AuthFrame({ children }: { children: ReactNode }) {
       <main className="flex items-center justify-center bg-canvas px-5 py-12">
         <div className="w-full max-w-sm">
           <div className="mb-10 lg:hidden">
-            <Logo tone="dark" />
+            <Logo />
           </div>
           {children}
         </div>

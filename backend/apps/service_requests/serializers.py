@@ -66,9 +66,13 @@ class ServiceRequestSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
 
-    def get_has_result_photo(self, obj) -> bool:
+    def get_has_result_photo(self, obj) -> bool | None:
+        """Detail card only: in a list it would cost one query per row."""
         from .services import has_result_photo
 
+        view = self.context.get("view")
+        if view is not None and view.action == "list":
+            return None
         return obj.status in ("in_progress", "done", "verified", "closed") and has_result_photo(obj)
 
 

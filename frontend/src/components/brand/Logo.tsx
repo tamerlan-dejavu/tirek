@@ -16,18 +16,11 @@ export function LogoMark({ className }: { className?: string }) {
   );
 }
 
-export function Logo({ className, tone = "light" }: { className?: string; tone?: "light" | "dark" }) {
+export function Logo({ className }: { className?: string }) {
   return (
     <span className={clsx("inline-flex items-center gap-2.5", className)}>
       <LogoMark className="size-7" />
-      <span
-        className={clsx(
-          "font-display text-[15px] font-bold tracking-[0.2em]",
-          tone === "light" ? "text-ink" : "text-ink",
-        )}
-      >
-        TIREK
-      </span>
+      <span className="font-display text-[15px] font-bold tracking-[0.2em] text-ink">TIREK</span>
     </span>
   );
 }

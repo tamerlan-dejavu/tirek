@@ -140,7 +140,7 @@ def test_request_becomes_defect_for_engineering_review(roles):
     )
     assert r.status_code == 201, r.content
     defect = client_for(roles.engineer_a).get(f"/api/v1/defects/{r.json()['defect']}/").json()
-    assert defect["status"] == DefectStatus.DETECTED
+    assert defect["status"] == DefectStatus.IN_REVIEW  # goes straight to the engineer
     assert "подъезд 2" in defect["location"]
 
 

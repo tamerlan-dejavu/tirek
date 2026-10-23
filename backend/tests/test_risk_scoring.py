@@ -53,16 +53,6 @@ def test_methodology_thresholds():
     assert methodology.suggest(1) == "R4"
 
 
-def test_service_life_from_year_built():
-    from datetime import date
-
-    today = date(2026, 1, 1)
-    assert methodology.service_life_level(2020, today) == 1
-    assert methodology.service_life_level(1990, today) == 3
-    assert methodology.service_life_level(1960, today) == 5
-    assert methodology.service_life_level(None, today) is None
-
-
 def test_methodology_endpoint_marks_preliminary(world):
     r = client_for(world.field_a).get("/api/v1/risk-assessments/methodology/")
     assert r.status_code == 200

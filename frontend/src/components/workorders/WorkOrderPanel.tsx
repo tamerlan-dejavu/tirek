@@ -2,7 +2,7 @@
 
 import { Upload, X } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { RiskBadge, StatusBadge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -88,8 +88,8 @@ export function WorkOrderPanel({
   const [plan, setPlan] = useState({
     planned_date: wo.planned_date ?? "",
     responsible_name: wo.responsible_name ?? "",
-    materials: "",
-    labor_hours: "",
+    materials: wo.materials ?? "",
+    labor_hours: wo.labor_hours ?? "",
   });
   const [reason, setReason] = useState("");
   const [saved, setSaved] = useState(false);
@@ -98,18 +98,6 @@ export function WorkOrderPanel({
     `work-orders/${wo.id}/transition/`,
     [[`work-orders/${wo.id}/events/`]],
   );
-
-  useEffect(() => {
-    api<WorkOrder & { materials: string; labor_hours: string | null }>(
-      `work-orders/${wo.id}/`,
-    ).then((full) =>
-      setPlan((p) => ({
-        ...p,
-        materials: full.materials ?? "",
-        labor_hours: full.labor_hours ?? "",
-      })),
-    );
-  }, [wo.id]);
 
   const actions = NEXT[wo.status].filter((s) => (WHO[s] ?? []).some((r) => my.has(r)));
 

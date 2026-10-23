@@ -32,6 +32,11 @@ def change_status(defect: Defect, target: str, request, comment: str = "") -> De
     return defect
 
 
+def send_to_review(defect: Defect, request, comment: str = "") -> Defect:
+    """Hand the defect to the reviewing engineer (new standalone defect or after clarification)."""
+    return change_status(defect, DefectStatus.IN_REVIEW, request, comment)
+
+
 def request_clarification(defect: Defect, request, comment: str) -> Defect:
     if not comment.strip():
         raise ValidationError({"comment": "Опишите, что нужно уточнить."})

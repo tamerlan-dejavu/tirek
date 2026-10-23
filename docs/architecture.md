@@ -27,8 +27,9 @@
 | M04 Элементы | `buildings` | `ElementType` (классификатор, миграция 0003), `BuildingElement` (иерархия) |
 | M05 Обследования | `checklists`, `inspections` | `ChecklistTemplateVersion` (заморозка), `inspections/services.py` |
 | M06 Дефекты | `defects` | `TRANSITIONS`, `DefectObservation`, `DefectEvent` |
-| M07 Риск | `risks` | `RiskAssessment` (immutable, ревизии), `services.assess` |
-| M08 Мероприятия | `workorders` | `TARGET_ROLES`, `services.transition`, синхронизация с дефектом |
+| M07 Риск | `risks` | `RiskAssessment` (immutable, ревизии), `services.assess`, `methodology.py` (расчёт-подсказка) |
+| M08 Мероприятия и ППР | `workorders` | `TARGET_ROLES`, `services.transition`, `planning.generate` / `planning.annual`, `MaintenanceRule` |
+| Диспетчерский модуль | `service_requests` | `TRANSITIONS` (7 статусов), `services.complete` (фото результата), `views.ServiceRequestViewSet` |
 | M09 Файлы | `files` | `services.store_upload`, `views.download` |
 | M10 Кабинет ОСИ | `portal` | агрегаты только по опубликованному |
 | M11 PDF | `reports` | `snapshot.py`, `tasks.py`, `templates/reports/inspection_report.html` |
@@ -72,7 +73,21 @@ detected ─► in_review ─► confirmed ─► planned ─► fixing ─► f
                ▼  │
        needs_clarification          in_review ─► rejected (обоснование)
 ```
+Дефект из обследования уходит на проверку вместе с обследованием; дефект, зарегистрированный отдельно (реестр, заявка), — сразу при создании.
 Переход в `confirmed` возможен только вместе с `RiskAssessment` (R1–R4 + обоснование) от проверяющего инженера. R1 → немедленное `UrgentNotice` всем организациям дома.
+
+**Оценка риска** (`risks/methodology.py`): вероятность × последствия × состояние × срок эксплуатации (каждый 1–5) → балл → предложенная категория по порогам. Категорию утверждает инженер; отличие от расчёта пишется в журнал. Шкалы и пороги — предварительная методика, требуют утверждения.
+
+**Заявка** (`service_requests/models.py`)
+
+```
+new ─► accepted ─► assigned ─► in_progress ─► done ─► verified ─► closed
+ └────────┴─► rejected                 ▲          │
+                                       └─(возврат)┘
+```
+Диспетчер принимает, задаёт приоритет, назначает и закрывает; исполнитель начинает и отмечает выполнение (обязательны описание и фото результата `repair_photo`); проверяет инженер или диспетчер, но не сам исполнитель. Источник заявки (житель, специалист, диспетчер, инженер, ОСИ) определяется по роли подавшего.
+
+**Предварительный план** (`workorders/planning.py`): мероприятия по подтверждённым дефектам без открытого мероприятия (срок — по категории риска) и по типовому регламенту ППР для элементов, отмеченных в паспорте как «есть». Всё создаётся «Предложено»; повторный запуск не дублирует.
 
 **Мероприятие** (`workorders/models.py`): кто может перевести в статус — `TARGET_ROLES`.
 

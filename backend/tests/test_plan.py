@@ -136,5 +136,7 @@ def test_numbers_skip_gaps(world):
     from apps.workorders.services import next_number
 
     year = timezone.now().year
-    WorkOrder.objects.create(number=f"WO-{year}-0006", building=world.building, title="x", basis="x")
+    WorkOrder.objects.create(
+        number=f"WO-{year}-0006", building=world.building, title="x", basis="x"
+    )
     assert next_number() == f"WO-{year}-0007"

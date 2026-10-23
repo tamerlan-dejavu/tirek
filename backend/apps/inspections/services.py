@@ -6,7 +6,8 @@ from apps.audit.models import AuditAction
 from apps.audit.services import log
 from apps.core import numbering
 from apps.core.state_machine import assert_transition
-from apps.defects.models import Defect, DefectStatus
+from apps.defects import services as defect_services
+from apps.defects.models import DefectStatus
 
 from .models import (
     TRANSITIONS,
@@ -61,7 +62,8 @@ def submit(inspection: Inspection, request) -> None:
     inspection.submitted_at = timezone.now()
     inspection.performed_at = inspection.performed_at or timezone.now()
     _set_status(inspection, InspectionStatus.SUBMITTED, request)
-    inspection.defects.filter(status=DefectStatus.DETECTED).update(status=DefectStatus.IN_REVIEW)
+    for defect in inspection.defects.filter(status=DefectStatus.DETECTED):
+        defect_services.send_to_review(defect, request, f"Обследование {inspection.number}")
 
 
 @transaction.atomic
@@ -169,7 +171,3 @@ def create_correction(inspection: Inspection, request, reason: str) -> Inspectio
         changes={"correction_of": str(inspection.pk), "reason": reason},
     )
     return correction
-
-
-def defects_of(inspection: Inspection):
-    return Defect.objects.filter(inspection=inspection)
