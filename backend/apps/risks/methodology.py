@@ -7,8 +7,6 @@ The result is a SUGGESTION: the reviewing engineer confirms or overrides it with
 justification; an override is recorded. The platform never issues automatic safety verdicts.
 """
 
-from datetime import date
-
 STATUS = "Предварительная методика — требует утверждения ответственной организацией"
 
 # Each factor is scored 1–5
@@ -76,13 +74,6 @@ def score(probability: int, consequences: int, condition: int, service_life: int
 
 def suggest(value: int) -> str:
     return next(cat for threshold, cat in THRESHOLDS if value >= threshold)
-
-
-def service_life_level(year_built: int | None, today: date | None = None) -> int | None:
-    if not year_built:
-        return None
-    age = (today or date.today()).year - year_built
-    return next((level for limit, level in AGE_BANDS if age < limit), 5)
 
 
 def as_dict() -> dict:

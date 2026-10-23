@@ -182,6 +182,7 @@ def create_defect(req: ServiceRequest, request, element, defect_type: str) -> De
         description=f"По заявке жителя {req.number}: {req.description}",
         created_by=request.user,
     )
+    defect_services.send_to_review(defect, request, f"Из заявки {req.number}")
     req.defect = defect
     req.save(update_fields=["defect", "updated_at"])
     note(req, request, f"Создан дефект {defect.number} для инженерной проверки")

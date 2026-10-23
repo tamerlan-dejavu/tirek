@@ -89,3 +89,25 @@ def test_registry_filters_and_category_statistics(world):
     assert eng.get("/api/v1/defects/?category=leaks").json()["count"] == 1
     stats = eng.get("/api/v1/analytics/breakdown/").json()
     assert stats["open_by_category"] == {"Трещины и раскрытие швов": 1, "Протечки и замачивание": 1}
+
+
+def test_standalone_defect_goes_to_review_and_back_after_clarification(world):
+    """A defect registered outside an inspection must reach the engineer (no dead end)."""
+    from apps.defects.models import DefectEvent
+
+    d = _defect(client_for(world.field_a), world).json()
+    assert d["status"] == "in_review"
+    eng = client_for(world.engineer_a)
+    url = f"/api/v1/defects/{d['id']}/"
+    r = eng.post(url + "request-clarification/", {"comment": "Нужна ширина трещины"})
+    assert r.json()["status"] == "needs_clarification"
+    field = client_for(world.field_a)
+    assert field.post(url + "resubmit/", {"comment": ""}).status_code == 400
+    r = field.post(url + "resubmit/", {"comment": "Ширина 2 мм, длина 40 см"})
+    assert r.status_code == 200 and r.json()["status"] == "in_review"
+    history = list(
+        DefectEvent.objects.filter(defect_id=d["id"])
+        .order_by("created_at")
+        .values_list("to_status", flat=True)
+    )
+    assert history == ["in_review", "needs_clarification", "in_review"]
