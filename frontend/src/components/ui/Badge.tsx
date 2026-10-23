@@ -17,14 +17,23 @@ const RISK_STYLE: Record<RiskCategory, { text: string; seg: string; icon: typeof
   R4: { text: "text-unknown-ink", seg: "bg-r4", icon: Circle },
 };
 
-export function SeverityMeter({ category, className }: { category: RiskCategory; className?: string }) {
+export function SeverityMeter({
+  category,
+  className,
+}: {
+  category: RiskCategory;
+  className?: string;
+}) {
   const level = RISK[category].level;
   return (
     <span aria-hidden className={clsx("inline-flex items-end gap-[2px]", className)}>
       {[1, 2, 3, 4].map((i) => (
         <span
           key={i}
-          className={clsx("w-[3px] rounded-[1px]", i <= level ? RISK_STYLE[category].seg : "bg-line")}
+          className={clsx(
+            "w-[3px] rounded-[1px]",
+            i <= level ? RISK_STYLE[category].seg : "bg-line",
+          )}
           style={{ height: 4 + i * 2 }}
         />
       ))}
@@ -58,13 +67,17 @@ export function RiskBadge({
         preliminary ? "border-dashed border-line-strong" : "border-line",
         s.text,
       )}
-      title={preliminary ? `${RISK[category].label} — предварительная оценка` : RISK[category].label}
+      title={
+        preliminary ? `${RISK[category].label} — предварительная оценка` : RISK[category].label
+      }
     >
       <Icon aria-hidden className="size-3.5 shrink-0" strokeWidth={2.2} />
       <span className="font-mono">{category}</span>
       {size === "md" && <span className="font-normal text-ink">{RISK[category].short}</span>}
       {preliminary && <span className="font-normal text-muted">· предв.</span>}
-      <span className="sr-only">{preliminary ? ", предварительная оценка" : ", утверждённая оценка"}</span>
+      <span className="sr-only">
+        {preliminary ? ", предварительная оценка" : ", утверждённая оценка"}
+      </span>
       {size === "md" && <SeverityMeter category={category} className="ml-0.5" />}
     </span>
   );
@@ -106,17 +119,11 @@ export function ApprovalTag({ approved, children }: { approved: boolean; childre
   );
 }
 
-export function Tag({ children, className }: { children: ReactNode; className?: string }) {
-  return (
-    <span className={clsx("inline-flex items-center gap-1 rounded-sm bg-mist px-1.5 py-0.5 text-xs text-ink", className)}>
-      {children}
-    </span>
-  );
-}
-
 /** Marks demo/mock content so it is never mistaken for real findings. */
 export function DemoMark() {
   return (
-    <span className="label-tech rounded-sm border border-dashed border-line-strong px-1 !text-[10px]">демо-данные</span>
+    <span className="label-tech rounded-sm border border-dashed border-line-strong px-1 !text-[10px]">
+      демо-данные
+    </span>
   );
 }
