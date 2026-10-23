@@ -32,7 +32,7 @@ export function SetPasswordForm({ token, endpoint, title }: { token: string; end
       <h1 className="text-xl font-semibold">{title}</h1>
       <Field label="Новый пароль" name="password" type="password" autoComplete="new-password" minLength={10} required hint="Не менее 10 символов" />
       <Field label="Повторите пароль" name="password2" type="password" autoComplete="new-password" required />
-      {error && <p role="alert" className="text-sm text-risk-r1">{error}</p>}
+      {error && <p role="alert" className="text-sm text-critical-ink">{error}</p>}
       <Button type="submit" className="w-full">Сохранить пароль</Button>
     </form>
   );

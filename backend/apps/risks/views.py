@@ -1,10 +1,11 @@
 from rest_framework import mixins, viewsets
+from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from apps.core import access
 from apps.organizations.models import Role
 
-from . import services
+from . import methodology, services
 from .models import RiskAssessment
 from .serializers import RiskAssessmentSerializer
 
@@ -37,5 +38,13 @@ class RiskAssessmentViewSet(
         ).exists():
             return Response(status=404)
         access.require(request.user, defect.building_id, Role.REVIEWING_ENGINEER)
-        assessment = services.assess(defect, request, **serializer.validated_data)
+        data = serializer.validated_data
+        factors = {f: data.pop(f, None) for f in methodology.FACTORS}
+        factors = {f: v for f, v in factors.items() if v is not None}
+        assessment = services.assess(defect, request, factors_in=factors or None, **data)
         return Response(self.get_serializer(assessment).data, status=201)
+
+    @action(detail=False, methods=["get"])
+    def methodology(self, request):
+        """Scales, thresholds and response rules of the (preliminary) scoring methodology."""
+        return Response(methodology.as_dict())

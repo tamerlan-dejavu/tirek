@@ -1,6 +1,6 @@
 import django_filters
 
-from .models import OPEN_STATUSES, Defect, DefectStatus, RiskCategory
+from .models import OPEN_STATUSES, Defect, DefectPriority, DefectStatus, RiskCategory
 
 
 class DefectFilter(django_filters.FilterSet):
@@ -8,6 +8,8 @@ class DefectFilter(django_filters.FilterSet):
     risk = django_filters.MultipleChoiceFilter(
         field_name="current_risk__category", choices=RiskCategory.choices
     )
+    priority = django_filters.MultipleChoiceFilter(choices=DefectPriority.choices)
+    category = django_filters.CharFilter(field_name="category_id")
     is_open = django_filters.BooleanFilter(method="filter_open")
     detected_from = django_filters.DateFilter(field_name="detected_on", lookup_expr="gte")
     detected_to = django_filters.DateFilter(field_name="detected_on", lookup_expr="lte")

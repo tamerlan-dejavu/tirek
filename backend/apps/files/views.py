@@ -11,14 +11,17 @@ from apps.core import access
 from apps.organizations.models import OrganizationMembership, Role
 
 from . import services
-from .models import FileLink, StoredFile
+from .models import FileKind, FileLink, StoredFile
 from .serializers import LINK_TARGETS, LinkSerializer, StoredFileSerializer, UploadSerializer
 
 UPLOADERS = (
     Role.FIELD_SPECIALIST,
     Role.REVIEWING_ENGINEER,
     Role.PROVIDER_ADMIN,
+    Role.PRODUCTION_PLANNER,
+    Role.DISPATCHER,
     Role.OSI_REPRESENTATIVE,
+    Role.RESIDENT,  # only to their own request, see upload()
 )
 
 
@@ -58,14 +61,24 @@ class StoredFileViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewse
 
     def get_queryset(self):
         user = self.request.user
-        qs = access.scope_to_buildings(StoredFile.objects.all(), user)
         provider_buildings = access.accessible_building_ids(user, roles=access.PROVIDER_ROLES)
-        # Customers list only published documents/reports; other files come via portal views
-        qs = qs.filter(
-            Q(building__in=provider_buildings)
-            | Q(buildingdocument__is_published=True)
-            | Q(report__published_at__isnull=False)
-        ).distinct()
+        # Customers list only published documents/reports; other files come via portal views.
+        # Everyone always sees what they uploaded themselves (e.g. a resident's request photos).
+        qs = (
+            StoredFile.objects.filter(
+                (
+                    Q(building__in=access.accessible_building_ids(user))
+                    & (
+                        Q(building__in=provider_buildings)
+                        | Q(buildingdocument__is_published=True)
+                        | Q(report__published_at__isnull=False)
+                    )
+                )
+                | Q(uploaded_by=user)
+            )
+            .distinct()
+            .order_by("-created_at")
+        )
         target_type = self.request.query_params.get("target_type")
         target_id = self.request.query_params.get("target_id")
         if target_type in LINK_TARGETS and target_id:
@@ -85,6 +98,12 @@ class StoredFileViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewse
         target = None
         if v.get("target_type"):
             target = resolve_target(v["target_type"], v["target_id"], building.pk)
+        # A resident may attach files only to their own request
+        if access.roles_for_building(request.user, building.pk) <= {Role.RESIDENT}:
+            if v.get("target_type") != "service_request" or target.author_id != request.user.pk:
+                raise PermissionDenied("Файлы можно прикрепить только к своей заявке.")
+            if v["kind"] not in (FileKind.PHOTO, FileKind.VIDEO):
+                raise PermissionDenied("Житель прикладывает фото или видео проблемы.")
 
         organization = (
             OrganizationMembership.objects.filter(
@@ -141,7 +160,7 @@ def _published_for_customer(stored: StoredFile) -> bool:
         return True
     for link in stored.links.select_related("content_type"):
         model = link.content_type.model
-        if model == "workorder":
+        if model in ("workorder", "servicerequest"):
             return True
         obj = link.content_type.get_object_for_this_type(pk=link.object_id)
         inspection = obj if model == "inspection" else getattr(obj, "inspection", None)

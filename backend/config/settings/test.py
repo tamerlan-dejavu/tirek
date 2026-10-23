@@ -20,3 +20,6 @@ REST_FRAMEWORK = {  # noqa: F405
         "sensitive": "1000/min",
     },
 }
+
+# Tests must not depend on the developer's local .env
+DEMO_MODE = False

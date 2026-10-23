@@ -4,15 +4,14 @@ from rest_framework.exceptions import ValidationError
 
 from apps.audit.models import AuditAction
 from apps.audit.services import log
+from apps.core import numbering
 from apps.core.state_machine import assert_transition
 
 from .models import TRANSITIONS, Defect, DefectEvent, DefectStatus
 
 
 def next_number() -> str:
-    year = timezone.now().year
-    count = Defect.objects.filter(number__startswith=f"DEF-{year}-").count() + 1
-    return f"DEF-{year}-{count:04d}"
+    return numbering.next_number(Defect, "DEF")
 
 
 @transaction.atomic
@@ -54,3 +53,23 @@ def close(defect: Defect, request, basis: str) -> Defect:
     defect.closed_at = timezone.now()
     defect.closed_by = request.user
     return change_status(defect, DefectStatus.CLOSED, request, basis)
+
+
+# Unambiguous keyword → category hints, used to pre-fill demo and imported data
+CATEGORY_HINTS = [
+    ("корроз", "corrosion"),
+    ("протеч", "leaks"),
+    ("подтоплен", "leaks"),
+    ("течь", "leaks"),
+    ("трещ", "cracks"),
+    ("шва", "cracks"),
+    ("отслоен", "destruction"),
+    ("разрушен", "destruction"),
+    ("смещен", "deformation"),
+    ("просадк", "deformation"),
+]
+
+
+def guess_category(text: str) -> str | None:
+    low = text.lower()
+    return next((code for kw, code in CATEGORY_HINTS if kw in low), None)

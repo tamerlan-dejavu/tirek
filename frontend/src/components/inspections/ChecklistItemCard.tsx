@@ -1,28 +1,41 @@
 "use client";
 
 import clsx from "clsx";
-import { useState } from "react";
+import { Camera, Check, CircleAlert, CloudOff, LoaderCircle, Minus, TriangleAlert, X } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import { useAutosave } from "@/hooks/useAutosave";
 import { api } from "@/lib/api/client";
 import type { ChecklistItem, InspectionAnswer } from "@/lib/api/types";
 
 const COMPLIANCE = [
-  { value: "ok", label: "Соответствует" },
-  { value: "fail", label: "Не соответствует" },
-  { value: "na", label: "Неприменимо" },
+  { value: "ok", label: "Соответствует", icon: Check, on: "border-healthy bg-healthy-soft text-healthy-ink" },
+  { value: "fail", label: "Не соответствует", icon: X, on: "border-critical bg-critical-soft text-critical-ink" },
+  { value: "na", label: "Неприменимо", icon: Minus, on: "border-unknown bg-unknown-soft text-unknown-ink" },
 ] as const;
 
 type Draft = Pick<InspectionAnswer, "compliance" | "number_value" | "text_value" | "date_value" | "choice_value" | "comment">;
 
-const SAVE_LABEL = { idle: "", saving: "Сохранение…", saved: "Сохранено", error: "Не сохранено — повторите" };
+function isFilled(d: Draft) {
+  return !!(d.compliance || d.text_value || d.choice_value || d.date_value || d.number_value !== null);
+}
 
-/** One checklist item, large touch targets, autosaved to the server (ТЗ 11.7). */
-export function ChecklistItemCard({ inspectionId, buildingId, item, answer, onCreateDefect }: {
+/** One checklist item: large touch targets, autosaved to the server (ТЗ 11.7). */
+export function ChecklistItemCard({
+  inspectionId,
+  buildingId,
+  item,
+  answer,
+  index,
+  onFilledChange,
+  onCreateDefect,
+}: {
   inspectionId: string;
   buildingId: string;
   item: ChecklistItem;
   answer?: InspectionAnswer;
+  index: number;
+  onFilledChange: (itemId: string, filled: boolean) => void;
   onCreateDefect: (answerId: string) => void;
 }) {
   const [draft, setDraft] = useState<Draft>({
@@ -34,6 +47,8 @@ export function ChecklistItemCard({ inspectionId, buildingId, item, answer, onCr
     comment: answer?.comment ?? "",
   });
   const [answerId, setAnswerId] = useState(answer?.id);
+  const [photos, setPhotos] = useState(0);
+  const [uploading, setUploading] = useState(false);
 
   const state = useAutosave(draft, async (d) => {
     const saved = await api<InspectionAnswer>("inspection-answers/", {
@@ -43,7 +58,9 @@ export function ChecklistItemCard({ inspectionId, buildingId, item, answer, onCr
     setAnswerId(saved.id);
   });
 
-  const unanswered = item.is_required && !draft.compliance && !draft.text_value && draft.number_value === null;
+  const filled = isFilled(draft);
+  useEffect(() => onFilledChange(item.id, filled), [filled, item.id, onFilledChange]);
+  const missingRequired = item.is_required && !filled;
 
   async function attachPhoto(file: File) {
     if (!answerId) return;
@@ -52,43 +69,63 @@ export function ChecklistItemCard({ inspectionId, buildingId, item, answer, onCr
     form.append("building", buildingId);
     form.append("target_type", "inspection_answer");
     form.append("target_id", answerId);
-    await api("files/upload/", { method: "POST", body: form });
+    setUploading(true);
+    try {
+      await api("files/upload/", { method: "POST", body: form });
+      setPhotos((n) => n + 1);
+    } finally {
+      setUploading(false);
+    }
   }
 
   return (
     <article
-      className={clsx("rounded-sm border bg-surface p-4", unanswered ? "border-preliminary border-dashed" : "border-line")}
-      aria-labelledby={`item-${item.id}`}
+      id={`item-${item.id}`}
+      className={clsx(
+        "scroll-mt-32 rounded-lg border bg-surface",
+        draft.compliance === "fail" ? "border-critical/50" : missingRequired ? "border-line-strong" : "border-line",
+      )}
+      aria-labelledby={`item-title-${item.id}`}
     >
-      <header className="flex items-start justify-between gap-3">
-        <h3 id={`item-${item.id}`} className="font-medium">
-          <span className="mr-2 font-mono text-ink-muted">{item.code}</span>
-          {item.text}
-          {item.is_required && <span className="sr-only"> (обязательный)</span>}
-        </h3>
-        <span role="status" className="text-xs text-ink-muted">{SAVE_LABEL[state]}</span>
+      <header className="flex items-start gap-3 px-4 pt-4">
+        <span className="mt-0.5 grid size-6 shrink-0 place-items-center rounded-full border border-line-strong font-mono text-[10px] text-muted">
+          {index}
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-[11px] text-muted">{item.code}</span>
+            {item.is_required && <span className="font-mono text-[10px] text-warning-ink uppercase">обяз.</span>}
+          </div>
+          <h3 id={`item-title-${item.id}`} className="mt-0.5 text-[15px] leading-snug font-medium text-ink">
+            {item.text}
+          </h3>
+          {item.guidance && <p className="mt-1 text-sm text-muted">{item.guidance}</p>}
+        </div>
+        <SaveIndicator state={state} />
       </header>
-      {item.guidance && <p className="mt-1 text-sm text-ink-muted">{item.guidance}</p>}
 
-      <div className="mt-3">
+      <div className="px-4 pt-3">
         {item.answer_type === "compliance" && (
           <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Результат проверки">
-            {COMPLIANCE.map((o) => (
-              <button
-                key={o.value}
-                role="radio"
-                aria-checked={draft.compliance === o.value}
-                onClick={() => setDraft({ ...draft, compliance: o.value })}
-                className={clsx(
-                  "min-h-12 rounded-sm border px-2 text-sm",
-                  draft.compliance === o.value
-                    ? o.value === "fail" ? "border-risk-r1 bg-risk-r1/10 text-risk-r1" : "border-accent bg-accent/10 text-accent"
-                    : "border-line",
-                )}
-              >
-                {o.label}
-              </button>
-            ))}
+            {COMPLIANCE.map((o) => {
+              const Icon = o.icon;
+              const on = draft.compliance === o.value;
+              return (
+                <button
+                  key={o.value}
+                  role="radio"
+                  aria-checked={on}
+                  onClick={() => setDraft({ ...draft, compliance: on ? "" : o.value })}
+                  className={clsx(
+                    "flex min-h-14 flex-col items-center justify-center gap-1 rounded-md border px-1 text-[12.5px] leading-tight transition-colors",
+                    on ? o.on : "border-line text-ink active:bg-mist",
+                  )}
+                >
+                  <Icon aria-hidden className="size-4" strokeWidth={2.4} />
+                  {o.label}
+                </button>
+              );
+            })}
           </div>
         )}
         {item.answer_type === "number" && (
@@ -98,64 +135,89 @@ export function ChecklistItemCard({ inspectionId, buildingId, item, answer, onCr
               inputMode="decimal"
               value={draft.number_value ?? ""}
               onChange={(e) => setDraft({ ...draft, number_value: e.target.value || null })}
-              className="min-h-12 w-40 rounded-sm border border-line px-3 font-mono"
+              className="h-12 w-40 rounded-md border border-line px-3 font-mono text-lg tabular focus:border-accent focus:outline-none"
+              aria-label={`${item.text}, ${item.unit}`}
             />
-            <span className="text-sm text-ink-muted">{item.unit}</span>
+            <span className="font-mono text-sm text-muted">{item.unit}</span>
           </label>
         )}
         {item.answer_type === "text" && (
           <textarea
             value={draft.text_value}
             onChange={(e) => setDraft({ ...draft, text_value: e.target.value })}
-            className="min-h-20 w-full rounded-sm border border-line p-2 text-sm"
+            className="min-h-20 w-full rounded-md border border-line p-3 text-[15px] focus:border-accent focus:outline-none"
+            aria-label={item.text}
           />
         )}
         {item.answer_type === "date" && (
-          <input
-            type="date"
-            value={draft.date_value ?? ""}
-            onChange={(e) => setDraft({ ...draft, date_value: e.target.value || null })}
-            className="min-h-12 rounded-sm border border-line px-3"
-          />
+          <input type="date" value={draft.date_value ?? ""} onChange={(e) => setDraft({ ...draft, date_value: e.target.value || null })} className="h-12 rounded-md border border-line px-3" aria-label={item.text} />
         )}
         {item.answer_type === "choice" && (
-          <select
-            value={draft.choice_value}
-            onChange={(e) => setDraft({ ...draft, choice_value: e.target.value })}
-            className="min-h-12 w-full rounded-sm border border-line px-2"
-          >
+          <select value={draft.choice_value} onChange={(e) => setDraft({ ...draft, choice_value: e.target.value })} className="h-12 w-full rounded-md border border-line bg-surface px-2" aria-label={item.text}>
             <option value="">—</option>
-            {item.choices.map((c) => <option key={c}>{c}</option>)}
+            {item.choices.map((c) => (
+              <option key={c}>{c}</option>
+            ))}
           </select>
         )}
       </div>
 
-      <input
-        value={draft.comment}
-        onChange={(e) => setDraft({ ...draft, comment: e.target.value })}
-        placeholder="Комментарий"
-        aria-label="Комментарий"
-        className="mt-3 min-h-10 w-full rounded-sm border border-line px-3 text-sm"
-      />
+      <div className="px-4 pt-3">
+        <input
+          value={draft.comment}
+          onChange={(e) => setDraft({ ...draft, comment: e.target.value })}
+          placeholder="Комментарий (необязательно)"
+          aria-label="Комментарий"
+          className="h-11 w-full rounded-md border border-line px-3 text-sm focus:border-accent focus:outline-none"
+        />
+      </div>
 
-      <div className="mt-3 flex flex-wrap gap-2">
-        <label className="inline-flex min-h-12 cursor-pointer items-center rounded-sm border border-line px-4 text-sm">
-          Фото
+      <footer className="mt-3 flex flex-wrap items-center gap-2 border-t border-line px-4 py-3">
+        <label
+          className={clsx(
+            "inline-flex h-11 cursor-pointer items-center gap-2 rounded-md border px-4 text-sm font-medium",
+            answerId ? "border-line-strong text-ink active:bg-mist" : "cursor-not-allowed border-line text-faint",
+          )}
+          title={answerId ? undefined : "Сначала отметьте результат проверки"}
+        >
+          {uploading ? <LoaderCircle className="size-4 animate-spin" /> : <Camera className="size-4" />}
+          Фото{photos > 0 && <span className="font-mono text-xs text-accent-strong">+{photos}</span>}
           <input
             type="file"
             accept="image/*"
             capture="environment"
             className="sr-only"
-            disabled={!answerId}
+            disabled={!answerId || uploading}
             onChange={(e) => e.target.files?.[0] && attachPhoto(e.target.files[0])}
           />
         </label>
         {draft.compliance === "fail" && answerId && (
-          <button onClick={() => onCreateDefect(answerId)} className="min-h-12 rounded-sm border border-risk-r1 px-4 text-sm text-risk-r1">
-            Создать дефект
+          <button onClick={() => onCreateDefect(answerId)} className="inline-flex h-11 items-center gap-2 rounded-[var(--radius-button)] border border-critical/50 bg-critical-soft px-4 text-sm font-medium text-critical-ink transition-colors hover:border-critical">
+            <TriangleAlert className="size-4" /> Зафиксировать дефект
           </button>
         )}
-      </div>
+        {missingRequired && (
+          <span className="ml-auto inline-flex items-center gap-1 text-xs text-warning-ink">
+            <CircleAlert className="size-3.5" /> не заполнено
+          </span>
+        )}
+      </footer>
     </article>
+  );
+}
+
+function SaveIndicator({ state }: { state: "idle" | "saving" | "saved" | "error" }) {
+  if (state === "idle") return null;
+  const map = {
+    saving: { icon: <LoaderCircle className="size-3.5 animate-spin" />, text: "Сохранение", cls: "text-muted" },
+    saved: { icon: <Check className="size-3.5" />, text: "Сохранено", cls: "text-healthy-ink" },
+    error: { icon: <CloudOff className="size-3.5" />, text: "Нет связи", cls: "text-critical-ink" },
+  } as const;
+  const s = map[state];
+  return (
+    <span role="status" className={clsx("inline-flex shrink-0 items-center gap-1 text-[11px]", s.cls)}>
+      {s.icon}
+      {s.text}
+    </span>
   );
 }

@@ -26,13 +26,13 @@ export default function BuildingHistory({ params }: { params: Promise<{ id: stri
           <ol className="space-y-3 text-sm">
             {rows.map((r) => (
               <li key={r.history_id} className="border-l-2 border-line pl-3">
-                <div className="text-xs text-ink-muted">
+                <div className="text-xs text-muted">
                   <span className="font-mono">{formatDate(r.history_date)}</span> · {r.history_user ?? "система"}
                   {r.history_type === "+" && " · создание"}
                 </div>
                 {Object.entries(r.changes).map(([field, c]) => (
                   <div key={field}>
-                    <span className="text-ink-muted">{field}:</span> <s>{c.from}</s> → <b>{c.to}</b>
+                    <span className="text-muted">{field}:</span> <s>{c.from}</s> → <b>{c.to}</b>
                   </div>
                 ))}
               </li>

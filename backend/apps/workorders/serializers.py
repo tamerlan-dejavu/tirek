@@ -1,8 +1,9 @@
 from rest_framework import serializers
 
+from apps.core.fields import DisplayNameField
 from apps.defects.models import DefectStatus
 
-from .models import WorkOrder, WorkOrderComment, WorkOrderEvent
+from .models import MaintenanceRule, WorkOrder, WorkOrderComment, WorkOrderEvent
 
 
 class WorkOrderSerializer(serializers.ModelSerializer):
@@ -11,7 +12,9 @@ class WorkOrderSerializer(serializers.ModelSerializer):
     risk_category = serializers.CharField(
         source="defect.approved_risk", read_only=True, default=None
     )
-    author_name = serializers.CharField(source="created_by.__str__", read_only=True, default=None)
+    author_name = DisplayNameField(source="created_by")
+    responsible_display = DisplayNameField(source="responsible")
+    element_name = serializers.CharField(source="element.name", read_only=True, default=None)
 
     class Meta:
         model = WorkOrder
@@ -25,13 +28,19 @@ class WorkOrderSerializer(serializers.ModelSerializer):
             "risk_category",
             "basis",
             "element",
+            "element_name",
             "title",
             "description",
+            "kind",
+            "work_type",
+            "periodicity",
+            "rule",
             "priority",
             "recommended_date",
             "planned_date",
             "responsible",
             "responsible_name",
+            "responsible_display",
             "status",
             "status_reason",
             "comment",
@@ -50,6 +59,7 @@ class WorkOrderSerializer(serializers.ModelSerializer):
             "number",
             "status",
             "status_reason",
+            "rule",
             "completed_at",
             "verified_at",
             "verified_by",
@@ -78,7 +88,7 @@ class TransitionSerializer(serializers.Serializer):
 
 
 class WorkOrderEventSerializer(serializers.ModelSerializer):
-    actor_name = serializers.CharField(source="actor.__str__", read_only=True)
+    actor_name = DisplayNameField(source="actor")
 
     class Meta:
         model = WorkOrderEvent
@@ -96,9 +106,45 @@ class WorkOrderEventSerializer(serializers.ModelSerializer):
 
 
 class WorkOrderCommentSerializer(serializers.ModelSerializer):
-    author_name = serializers.CharField(source="author.__str__", read_only=True)
+    author_name = DisplayNameField(source="author")
 
     class Meta:
         model = WorkOrderComment
         fields = ["id", "work_order", "author", "author_name", "text", "created_at"]
         read_only_fields = ["id", "work_order", "author", "created_at"]
+
+
+class MaintenanceRuleSerializer(serializers.ModelSerializer):
+    element_type_name = serializers.CharField(source="element_type.name", read_only=True)
+    work_type_display = serializers.CharField(source="get_work_type_display", read_only=True)
+    periodicity_display = serializers.CharField(source="get_periodicity_display", read_only=True)
+
+    class Meta:
+        model = MaintenanceRule
+        fields = [
+            "id",
+            "element_type",
+            "element_type_name",
+            "work_type",
+            "work_type_display",
+            "title",
+            "periodicity",
+            "periodicity_display",
+            "months",
+            "materials",
+            "labor_hours",
+            "note",
+            "is_active",
+        ]
+
+    def validate_months(self, value):
+        if not isinstance(value, list) or any(
+            not isinstance(m, int) or not 1 <= m <= 12 for m in value
+        ):
+            raise serializers.ValidationError("Месяцы — числа от 1 до 12.")
+        return sorted(set(value))
+
+
+class GeneratePlanSerializer(serializers.Serializer):
+    building = serializers.UUIDField()
+    year = serializers.IntegerField(required=False, min_value=2000, max_value=2100)

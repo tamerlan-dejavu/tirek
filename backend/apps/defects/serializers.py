@@ -1,12 +1,25 @@
 from rest_framework import serializers
 
-from .models import Defect, DefectEvent, DefectObservation
+from apps.core.fields import DisplayNameField
+
+from .models import Defect, DefectCategory, DefectEvent, DefectObservation
 
 
 class DefectSerializer(serializers.ModelSerializer):
     building_address = serializers.CharField(source="building.address", read_only=True)
     element_path = serializers.ListField(source="element.path", read_only=True)
     approved_risk = serializers.CharField(read_only=True, allow_null=True)
+    # Used by the schematic building view and analytics to place / group the defect
+    element_type = serializers.CharField(source="element.element_type_id", read_only=True)
+    element_group = serializers.CharField(source="element.element_type.group", read_only=True)
+    inspection_number = serializers.CharField(
+        source="inspection.number", read_only=True, default=None
+    )
+    author_name = DisplayNameField(source="created_by")
+    category_name = serializers.CharField(source="category.name", read_only=True, default=None)
+    category = serializers.PrimaryKeyRelatedField(
+        queryset=DefectCategory.objects.filter(is_active=True), allow_null=True, required=False
+    )
 
     class Meta:
         model = Defect
@@ -17,6 +30,13 @@ class DefectSerializer(serializers.ModelSerializer):
             "building_address",
             "element",
             "element_path",
+            "element_type",
+            "element_group",
+            "category",
+            "category_name",
+            "priority",
+            "inspection_number",
+            "author_name",
             "location",
             "inspection",
             "answer",
@@ -84,7 +104,7 @@ class DefectObservationSerializer(serializers.ModelSerializer):
 
 
 class DefectEventSerializer(serializers.ModelSerializer):
-    actor_name = serializers.CharField(source="actor.__str__", read_only=True)
+    actor_name = DisplayNameField(source="actor")
 
     class Meta:
         model = DefectEvent
@@ -102,3 +122,11 @@ class ReasonSerializer(serializers.Serializer):
 
 class BasisSerializer(serializers.Serializer):
     basis = serializers.CharField()
+
+
+class DefectCategorySerializer(serializers.ModelSerializer):
+    open_defects = serializers.IntegerField(read_only=True, default=0)
+
+    class Meta:
+        model = DefectCategory
+        fields = ["code", "name", "description", "sort_order", "is_active", "open_defects"]

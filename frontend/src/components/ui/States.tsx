@@ -1,22 +1,36 @@
+import clsx from "clsx";
 import type { ReactNode } from "react";
 
 import { ApiError } from "@/lib/api/client";
 
-/** Loading / empty / error states, designed for every screen (ТЗ 11.6). */
+/** Loading / empty / error states — designed for every screen (ТЗ 11.6). */
 
-export function Loading({ label = "Загрузка…" }: { label?: string }) {
+export function Skeleton({ className }: { className?: string }) {
+  return <div aria-hidden className={clsx("animate-pulse rounded-md bg-mist", className)} />;
+}
+
+export function Loading({ rows = 3 }: { rows?: number }) {
   return (
-    <div role="status" className="py-10 text-center text-sm text-ink-muted">
-      {label}
+    <div role="status" aria-label="Загрузка" className="space-y-2.5 p-4">
+      {Array.from({ length: rows }, (_, i) => (
+        <Skeleton key={i} className={clsx("h-4", i % 3 === 2 ? "w-2/3" : "w-full")} />
+      ))}
     </div>
   );
 }
 
-export function Empty({ title, children }: { title: string; children?: ReactNode }) {
+export function Empty({ title, children, icon }: { title: string; children?: ReactNode; icon?: ReactNode }) {
   return (
-    <div className="rounded-sm border border-dashed border-line bg-surface px-6 py-10 text-center">
-      <p className="font-medium">{title}</p>
-      {children && <div className="mt-2 text-sm text-ink-muted">{children}</div>}
+    <div className="grid-blueprint-light flex flex-col items-center px-6 py-12 text-center">
+      <div className="mb-3 grid size-10 place-items-center rounded-md border border-dashed border-line-strong bg-surface text-faint">
+        {icon ?? (
+          <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden>
+            <path d="M4 20V9l8-5 8 5v11M4 20h16M9 20v-6h6v6" />
+          </svg>
+        )}
+      </div>
+      <p className="text-sm font-medium text-ink">{title}</p>
+      {children && <div className="mt-1 max-w-sm text-sm text-muted">{children}</div>}
     </div>
   );
 }
@@ -25,13 +39,15 @@ export function ErrorState({ error }: { error: unknown }) {
   const message =
     error instanceof ApiError
       ? error.status === 403
-        ? "Недостаточно прав для просмотра."
+        ? "Недостаточно прав для этого действия."
         : error.status === 404
-          ? "Не найдено или нет доступа."
-          : error.message
-      : "Не удалось загрузить данные. Проверьте соединение.";
+          ? "Запись не найдена или у вас нет к ней доступа."
+          : typeof error.detail === "string"
+            ? error.detail
+            : JSON.stringify(error.detail)
+      : "Не удалось загрузить данные. Проверьте соединение и повторите.";
   return (
-    <div role="alert" className="rounded-sm border border-risk-r1/40 bg-risk-r1/5 px-4 py-3 text-sm text-risk-r1">
+    <div role="alert" className="rounded-md border border-critical/30 bg-critical-soft px-3 py-2.5 text-sm text-critical-ink">
       {message}
     </div>
   );
@@ -40,15 +56,26 @@ export function ErrorState({ error }: { error: unknown }) {
 export function QueryState<T>({
   query,
   empty,
+  emptyTitle = "Записей пока нет",
+  emptyText,
+  skeletonRows,
   children,
 }: {
   query: { isLoading: boolean; error: unknown; data: T | undefined };
   empty?: (data: T) => boolean;
+  emptyTitle?: string;
+  emptyText?: ReactNode;
+  skeletonRows?: number;
   children: (data: T) => ReactNode;
 }) {
-  if (query.isLoading) return <Loading />;
-  if (query.error) return <ErrorState error={query.error} />;
+  if (query.isLoading) return <Loading rows={skeletonRows} />;
+  if (query.error)
+    return (
+      <div className="p-4">
+        <ErrorState error={query.error} />
+      </div>
+    );
   if (query.data === undefined) return null;
-  if (empty?.(query.data)) return <Empty title="Пока ничего нет" />;
+  if (empty?.(query.data)) return <Empty title={emptyTitle}>{emptyText}</Empty>;
   return <>{children(query.data)}</>;
 }

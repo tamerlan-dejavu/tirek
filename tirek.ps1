@@ -16,10 +16,11 @@ function Compose { docker compose @args; if ($LASTEXITCODE -ne 0) { exit $LASTEX
 
 switch ($Command) {
     "up" {
-        Compose up -d --build
+        # --renew-anon-volumes: pick up new npm packages in the frontend container
+        Compose up -d --build --renew-anon-volumes
         $port = (Select-String -Path .env -Pattern '^TIREK_FRONTEND_PORT=(\d+)').Matches.Groups[1].Value
         if (-not $port) { $port = "3000" }
-        Write-Host "`nTirek: http://localhost:$port  (the very first page load compiles for ~30 s — that is normal in dev)"
+        Write-Host "`nTirek: http://localhost:$port  (the very first page load compiles for ~30 s - that is normal in dev)"
         Write-Host "Demo data: .\tirek.ps1 seed"
     }
     "down" { Compose down }

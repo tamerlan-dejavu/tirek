@@ -1,63 +1,170 @@
 "use client";
 
 import clsx from "clsx";
+import {
+  Bell,
+  BookOpen,
+  Building2,
+  ChartColumn,
+  ClipboardCheck,
+  FileText,
+  FolderOpen,
+  House,
+  Inbox,
+  LayoutGrid,
+  MessageSquarePlus,
+  Settings2,
+  TriangleAlert,
+  Users,
+  Vote,
+  Wrench,
+  type LucideIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { Logo } from "@/components/brand/Logo";
 import { useMe } from "@/lib/api/hooks";
+import type { Me } from "@/lib/api/types";
 import { can } from "@/lib/permissions";
 
 export interface NavItem {
   href: string;
   label: string;
-  visible?: boolean;
+  icon: LucideIcon;
+  code: string;
+  visible?: (me?: Me) => boolean;
 }
 
-export function Sidebar({ items, title }: { items: NavItem[]; title: string }) {
+export interface NavGroup {
+  title: string;
+  items: NavItem[];
+}
+
+/** Provider staff navigation. Role-aware: items the role does not use are not shown. */
+export const PROVIDER_NAV: NavGroup[] = [
+  {
+    title: "Работа",
+    items: [
+      { href: "/dashboard", label: "Обзор", icon: LayoutGrid, code: "01" },
+      { href: "/requests", label: "Заявки", icon: Inbox, code: "02" },
+      { href: "/buildings", label: "Дома", icon: Building2, code: "03" },
+      { href: "/inspections", label: "Обследования", icon: ClipboardCheck, code: "04", visible: can.inspect },
+      { href: "/defects", label: "Дефекты", icon: TriangleAlert, code: "05" },
+      { href: "/work-orders", label: "Обслуживание", icon: Wrench, code: "06" },
+    ],
+  },
+  {
+    title: "Сведения",
+    items: [
+      { href: "/analytics", label: "Аналитика", icon: ChartColumn, code: "07", visible: can.seeAnalytics },
+      { href: "/reports", label: "Отчёты", icon: FileText, code: "08" },
+      { href: "/documents", label: "Документы", icon: FolderOpen, code: "09" },
+    ],
+  },
+  {
+    title: "Управление",
+    items: [
+      { href: "/admin/organizations", label: "Организации и роли", icon: Users, code: "10", visible: can.manageOrganizations },
+      { href: "/admin/reference", label: "Справочники", icon: BookOpen, code: "11", visible: can.manageOrganizations },
+      { href: "/settings", label: "Настройки", icon: Settings2, code: "12" },
+    ],
+  },
+];
+
+export const OSI_NAV: NavGroup[] = [
+  {
+    title: "Кабинет ОСИ",
+    items: [
+      { href: "/osi", label: "Мои дома", icon: Building2, code: "01" },
+      { href: "/requests", label: "Заявки жителей", icon: Inbox, code: "02" },
+      { href: "/settings", label: "Настройки", icon: Settings2, code: "03" },
+    ],
+  },
+];
+
+export const RESIDENT_NAV: NavGroup[] = [
+  {
+    title: "Мой дом",
+    items: [
+      { href: "/resident", label: "Главная", icon: House, code: "01" },
+      { href: "/resident/new", label: "Сообщить о проблеме", icon: MessageSquarePlus, code: "02" },
+      { href: "/resident/polls", label: "Опросы", icon: Vote, code: "03" },
+      { href: "/settings", label: "Уведомления и профиль", icon: Bell, code: "04" },
+    ],
+  },
+];
+
+export const ROLE_LABEL: Record<string, string> = {
+  provider_admin: "Администратор",
+  field_specialist: "Полевой специалист",
+  reviewing_engineer: "Инженер",
+  production_planner: "ПТО",
+  dispatcher: "Диспетчер",
+  osi_representative: "Представитель ОСИ",
+  resident: "Житель",
+};
+
+export function Sidebar({ groups, onNavigate }: { groups: NavGroup[]; onNavigate?: () => void }) {
   const pathname = usePathname();
+  const { data: me } = useMe();
+  const membership = me?.memberships[0];
+
   return (
-    <nav aria-label="Основная навигация" className="flex flex-col gap-0.5 p-3">
-      <div className="mb-4 px-2 font-mono text-xs uppercase tracking-[0.2em] text-ink-muted">
-        Tirek · {title}
+    <div className="flex h-full flex-col border-r border-line bg-base text-ink">
+      <div className="flex h-14 items-center border-b border-line px-5">
+        <Link href="/" aria-label="Tirek — на главную" onClick={onNavigate}>
+          <Logo />
+        </Link>
       </div>
-      {items
-        .filter((i) => i.visible !== false)
-        .map((item) => {
-          const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+
+      <nav aria-label="Основная навигация" className="flex-1 overflow-y-auto px-3 py-4">
+        {groups.map((group) => {
+          const items = group.items.filter((i) => !i.visible || i.visible(me));
+          if (!items.length) return null;
           return (
-            <Link
-              key={item.href}
-              href={item.href}
-              aria-current={active ? "page" : undefined}
-              className={clsx(
-                "rounded-sm px-2 py-1.5 text-sm",
-                active ? "bg-accent/10 font-medium text-accent" : "text-ink hover:bg-canvas",
-              )}
-            >
-              {item.label}
-            </Link>
+            <div key={group.title} className="mb-5">
+              <div className="mb-1.5 px-2 font-mono text-[10px] tracking-[0.12em] text-faint uppercase">
+                {group.title}
+              </div>
+              <ul className="space-y-px">
+                {items.map((item) => {
+                  const active =
+                    pathname === item.href || (item.href !== "/osi" && pathname.startsWith(`${item.href}/`));
+                  const Icon = item.icon;
+                  return (
+                    <li key={item.href}>
+                      <Link
+                        href={item.href}
+                        onClick={onNavigate}
+                        aria-current={active ? "page" : undefined}
+                        className={clsx(
+                          "group relative flex h-9 items-center gap-3 rounded-md px-2.5 text-[13.5px] transition-colors duration-[var(--duration-base)]",
+                          active ? "bg-mist text-ink" : "text-muted hover:bg-mist/60 hover:text-ink",
+                        )}
+                      >
+                        {active && <span aria-hidden className="absolute top-2 bottom-2 -left-3 w-[2px] bg-accent" />}
+                        <Icon aria-hidden className={clsx("size-4", active ? "text-accent" : "text-faint group-hover:text-muted")} strokeWidth={1.7} />
+                        <span className="flex-1">{item.label}</span>
+                        <span className="font-mono text-[10px] text-faint/70">{item.code}</span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
           );
         })}
-    </nav>
-  );
-}
+      </nav>
 
-/** Provider staff navigation (ТЗ 12). */
-export function ProviderSidebar() {
-  const { data: me } = useMe();
-  return (
-    <Sidebar
-      title="Поставщик"
-      items={[
-        { href: "/dashboard", label: "Главная" },
-        { href: "/buildings", label: "Дома" },
-        { href: "/inspections", label: "Обследования" },
-        { href: "/defects", label: "Дефекты" },
-        { href: "/work-orders", label: "План работ" },
-        { href: "/reports", label: "Отчёты" },
-        { href: "/admin/organizations", label: "Организации и пользователи", visible: can.manageOrganizations(me) },
-        { href: "/settings", label: "Настройки" },
-      ]}
-    />
+      {membership && (
+        <div className="border-t border-line px-5 py-4">
+          <div className="truncate text-[13px] text-ink">{membership.organization_name}</div>
+          <div className="mt-0.5 font-mono text-[10px] tracking-[0.1em] text-faint uppercase">
+            {ROLE_LABEL[membership.role] ?? membership.role}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

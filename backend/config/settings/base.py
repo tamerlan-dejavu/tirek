@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "apps.audit",  # M12 — journal
     "apps.analytics",  # M12 — metrics
     "apps.notifications",
+    "apps.service_requests",  # resident requests and polls (beyond MVP 1.0 scope)
 ]
 
 MIDDLEWARE = [
@@ -157,6 +158,7 @@ FILE_DOWNLOAD_MODE = env(
 )
 
 MAX_UPLOAD_SIZE_MB = env.int("MAX_UPLOAD_SIZE_MB", default=25)
+MAX_VIDEO_UPLOAD_MB = env.int("MAX_VIDEO_UPLOAD_MB", default=100)
 DATA_UPLOAD_MAX_MEMORY_SIZE = 2 * 1024 * 1024  # JSON bodies (ТЗ 9.3)
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
 # Final list is fixed after the pilot equipment check (ТЗ 5.9)
@@ -166,7 +168,14 @@ ALLOWED_UPLOAD_MIME_TYPES = [
     "image/heic",
     "image/webp",
     "application/pdf",
+    "video/mp4",
+    "video/quicktime",
+    "video/webm",
 ]
+
+# Demo stand: role picker with password-less login into the fixed demo accounts
+# (apps/accounts/demo.py). NEVER enable on an instance with real users or data.
+DEMO_MODE = env.bool("DEMO_MODE", default=False)
 
 vars().update(env.email_url("EMAIL_URL", default="consolemail://"))
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="Tirek <no-reply@tirek.local>")

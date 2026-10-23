@@ -33,7 +33,7 @@ export default function BuildingDocuments({ params }: { params: Promise<{ id: st
               key: "dl",
               header: "",
               // Signed, short-lived URL issued only after a server-side access check (ТЗ 5.9)
-              render: (d) => <a className="text-accent" href={`${API_BASE}/v1/files/${d.file}/download/`}>Скачать</a>,
+              render: (d) => <a className="text-accent-strong" href={`${API_BASE}/v1/files/${d.file}/download/`}>Скачать</a>,
             },
           ]}
         />

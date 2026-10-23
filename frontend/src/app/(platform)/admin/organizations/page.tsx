@@ -17,7 +17,10 @@ const ROLE_LABEL: Record<Role, string> = {
   provider_admin: "Администратор поставщика",
   field_specialist: "Полевой специалист",
   reviewing_engineer: "Проверяющий инженер",
+  production_planner: "ПТО / производственный блок",
+  dispatcher: "Диспетчер",
   osi_representative: "Представитель ОСИ",
+  resident: "Житель",
 };
 
 export default function OrganizationsPage() {
@@ -66,7 +69,7 @@ export default function OrganizationsPage() {
                   {list.map((m) => (
                     <li key={m.id} className="flex justify-between py-1.5">
                       <span>{m.user_full_name || m.user_email}</span>
-                      <span className="text-ink-muted">{ROLE_LABEL[m.role]}{!m.is_active && " · отключён"}</span>
+                      <span className="text-muted">{ROLE_LABEL[m.role]}{!m.is_active && " · отключён"}</span>
                     </li>
                   ))}
                 </ul>
@@ -77,8 +80,8 @@ export default function OrganizationsPage() {
               <input name="full_name" placeholder="ФИО" aria-label="ФИО" className="min-h-9 w-full rounded-sm border border-line px-2 text-sm" />
               <select name="role" aria-label="Роль" className="min-h-9 w-full rounded-sm border border-line px-2 text-sm">
                 {(selected.type === "provider"
-                  ? (["field_specialist", "reviewing_engineer", "provider_admin"] as Role[])
-                  : (["osi_representative"] as Role[])
+                  ? (["field_specialist", "reviewing_engineer", "production_planner", "dispatcher", "provider_admin"] as Role[])
+                  : (["osi_representative", "resident"] as Role[])
                 ).map((r) => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}
               </select>
               {error ? <ErrorState error={error} /> : null}

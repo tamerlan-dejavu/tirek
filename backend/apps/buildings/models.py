@@ -71,15 +71,33 @@ class Building(UUIDModel):
     def __str__(self):
         return self.name or self.address
 
+    # «Общие сведения» of the digital passport, in the order of the passport structure
+    GENERAL_FIELDS = [
+        "address",
+        "year_built",
+        "floors",
+        "entrances",
+        "total_area_m2",
+        "apartments",
+        "structural_scheme",
+    ]
+
     @property
     def completeness(self) -> int:
-        """Share of filled passport fields, percent. «Неизвестно» counts as not filled."""
-        filled = 0
-        for field in self.PASSPORT_FIELDS:
-            value = getattr(self, field)
-            if value not in (None, "", StructuralScheme.UNKNOWN):
-                filled += 1
-        return round(100 * filled / len(self.PASSPORT_FIELDS))
+        """
+        Share of the digital passport that is known, percent: general fields plus every
+        element / system entry. «Неизвестно» counts as not filled; «нет в доме» is known.
+        """
+        known = sum(
+            1
+            for f in self.GENERAL_FIELDS
+            if getattr(self, f) not in (None, "", StructuralScheme.UNKNOWN)
+        )
+        total = len(self.GENERAL_FIELDS)
+        entries = list(self.passport_entries.values_list("presence", flat=True))
+        known += sum(1 for p in entries if p != Presence.UNKNOWN)
+        total += len(entries)
+        return round(100 * known / total)
 
 
 class ElementGroup(models.TextChoices):
@@ -140,6 +158,44 @@ class BuildingElement(UUIDModel):
             names.append(node.name)
             node = node.parent
         return list(reversed(names))
+
+
+class Presence(models.TextChoices):
+    PRESENT = "present", "Есть"
+    ABSENT = "absent", "Нет в доме"
+    UNKNOWN = "unknown", "Неизвестно"
+
+
+class BuildingPassportEntry(UUIDModel):
+    """
+    One line of the digital passport: a classifier element or system for this building
+    (structural elements, engineering systems, operational elements — ТЗ 5.3–5.4).
+    Created for every classifier type, so «not described yet» (unknown) is explicit and
+    «absent» (e.g. no gas supply) is a recorded fact, not a missing row.
+    """
+
+    building = models.ForeignKey(
+        Building, on_delete=models.PROTECT, related_name="passport_entries"
+    )
+    element_type = models.ForeignKey(ElementType, on_delete=models.PROTECT, related_name="+")
+    presence = models.CharField(max_length=8, choices=Presence.choices, default=Presence.UNKNOWN)
+    quantity = models.PositiveIntegerField(null=True, blank=True)
+    characteristics = models.TextField("Характеристики", blank=True)
+    source = models.CharField("Источник сведений", max_length=255, blank=True)
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+
+    history = HistoricalRecords(excluded_fields=["updated_at"])
+
+    class Meta:
+        ordering = ["element_type__group", "element_type__sort_order"]
+        constraints = [
+            models.UniqueConstraint(fields=["building", "element_type"], name="uniq_passport_entry")
+        ]
+
+    def __str__(self):
+        return f"{self.building} · {self.element_type}"
 
 
 class BuildingDocument(UUIDModel):

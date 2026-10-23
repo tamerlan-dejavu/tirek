@@ -1,48 +1,141 @@
 @import "tailwindcss";
 
 /*
- * Tirek design tokens — "Architectural Intelligence / Precision Engineering" (ТЗ 11).
- * Two modes: light functional surfaces for the platform, deep dark surfaces for the public site.
- * Final values come from the approved UI-kit (ТЗ 11.9); these are placeholders with AA contrast.
+ * TIREK DESIGN TOKENS — Premium SaaS Minimalism (graphite).
+ * Single source of truth for color, type, radius and motion. Spec: docs/design-system.md.
+ * Contrast is measured against --color-canvas (#0C0D10) and --color-surface (#16181D).
  */
 @theme {
-  --font-sans: "Inter", "Segoe UI", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", "Consolas", ui-monospace, monospace;
+  /* Typography */
+  --font-display: "Manrope Variable", "Manrope", "Inter Variable", system-ui, sans-serif;
+  --font-sans: "Inter Variable", "Inter", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", "JetBrains Mono", ui-monospace, monospace;
 
-  --color-canvas: #f6f7f9;
-  --color-surface: #ffffff;
-  --color-line: #d9dee5;
-  --color-ink: #141a22;
-  --color-ink-muted: #556070;
-  --color-accent: #1f4fd1;
-  --color-accent-ink: #ffffff;
+  /* Surfaces */
+  --color-base: #0c0d10; /* page background, navigation */
+  --color-base-2: #111317; /* subtly raised band */
+  --color-canvas: #0c0d10; /* working background */
+  --color-surface: #16181d; /* cards, panels */
+  --color-mist: #1d2026; /* secondary surfaces, hover, tracks */
+  --color-line: #292c33; /* 1px borders and dividers */
+  --color-line-strong: #3a3e47; /* input borders, emphasized dividers */
 
-  /* Risk — always paired with a text label */
-  --color-risk-r1: #b42318;
-  --color-risk-r2: #c4590a;
-  --color-risk-r3: #8a6a00;
-  --color-risk-r4: #2f6b45;
+  /* Text */
+  --color-ink: #f5f5f7; /* primary */
+  --color-muted: #969ba6; /* secondary (7.0:1 on canvas) */
+  --color-faint: #6b7280; /* tertiary, technical captions (4.1:1 — only ≥ 11px labels/decorative) */
 
-  --color-approved: #1d5c3a;
-  --color-preliminary: #8a5a00;
+  /* Accent */
+  --color-accent: #3b82f6;
+  --color-accent-strong: #3b82f6; /* links and filled buttons */
+  --color-accent-hover: #2563eb;
+  --color-accent-soft: rgb(59 130 246 / 0.12);
 
-  /* Public (dark) surface */
-  --color-night: #0a0e14;
-  --color-night-2: #121822;
-  --color-blueprint: #3d6bff;
+  /* Neutral line colors for drawings and charts */
+  --color-steel: #8b93a1;
+  --color-steel-2: #4b5260;
+
+  /* Semantic — base for fills and markers, -ink for text on dark, -soft for tinted backgrounds */
+  --color-critical: #ef4444;
+  --color-critical-ink: #f87171;
+  --color-critical-soft: rgb(239 68 68 / 0.12);
+  --color-warning: #f59e0b;
+  --color-warning-ink: #fbbf24;
+  --color-warning-soft: rgb(245 158 11 / 0.12);
+  --color-healthy: #10b981;
+  --color-healthy-ink: #34d399;
+  --color-healthy-soft: rgb(16 185 129 / 0.12);
+  --color-info: #38bdf8;
+  --color-info-ink: #7dd3fc;
+  --color-info-soft: rgb(56 189 248 / 0.12);
+  --color-unknown: #94a3b8;
+  --color-unknown-ink: #cbd5e1;
+  --color-unknown-soft: rgb(148 163 184 / 0.12);
+
+  /* Engineering risk scale R1–R4 — used only for meaning, never as decoration */
+  --color-r1: #ef4444;
+  --color-r2: #f59e0b;
+  --color-r3: #38bdf8;
+  --color-r4: #94a3b8;
+
+  /* Geometry */
+  --radius-xs: 4px;
+  --radius-sm: 6px; /* small elements, badges */
+  --radius-md: 8px; /* inputs, controls */
+  --radius-lg: 12px; /* cards */
+  --radius-xl: 16px; /* modals, large containers */
+  --radius-button: 10px;
+
+  /* Depth comes from surfaces and 1px borders, not shadows */
+  --shadow-hairline: none;
+  --shadow-panel: 0 0 0 1px var(--color-line);
+  --shadow-overlay: 0 16px 40px -12px rgb(0 0 0 / 0.6), 0 0 0 1px var(--color-line);
+
+  /* Motion — calm, 150–250 ms */
+  --ease-precise: cubic-bezier(0.2, 0, 0, 1);
+  --duration-fast: 150ms;
+  --duration-base: 200ms;
+  --duration-slow: 250ms;
+
+  --animate-draw: draw 2.4s var(--ease-precise) forwards;
+  --animate-fade-up: fade-up 250ms var(--ease-precise) both;
+
+  @keyframes draw {
+    from {
+      stroke-dashoffset: var(--len, 1200);
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
 }
 
 @layer base {
   html {
-    color-scheme: light;
+    color-scheme: dark;
+    -webkit-text-size-adjust: 100%;
   }
   body {
-    @apply bg-canvas text-ink antialiased;
+    background: var(--color-canvas);
+    color: var(--color-ink);
     font-family: var(--font-sans);
+    font-feature-settings: "cv11", "ss01";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: clip;
+  }
+  /* Headings use the display face; body copy, navigation and forms stay on Inter */
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
   }
   :focus-visible {
     outline: 2px solid var(--color-accent);
     outline-offset: 2px;
+    border-radius: var(--radius-xs);
+  }
+  ::selection {
+    background: rgb(59 130 246 / 0.32);
+  }
+  input,
+  textarea,
+  select {
+    color-scheme: dark;
+  }
+  ::placeholder {
+    color: var(--color-faint);
   }
 }
 
@@ -50,22 +143,50 @@
   font-variant-numeric: tabular-nums;
 }
 
-@utility surface-dark {
-  background: var(--color-night);
-  color: #e7ecf3;
-  color-scheme: dark;
+/* Technical label: IDs, categories, engineering captions */
+@utility label-tech {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-muted);
 }
 
-@utility blueprint-grid {
+/* Construction grid — nearly invisible; kept only where it supports drawings */
+@utility grid-blueprint {
   background-image:
-    linear-gradient(to right, rgb(61 107 255 / 0.08) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(61 107 255 / 0.08) 1px, transparent 1px);
+    linear-gradient(to right, rgb(255 255 255 / 0.025) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.025) 1px, transparent 1px);
   background-size: 32px 32px;
+}
+@utility grid-blueprint-light {
+  background-image:
+    linear-gradient(to right, rgb(255 255 255 / 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.02) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Former drawing-sheet corner marks — retired in the minimal theme (kept as a no-op hook) */
+@utility registration {
+  position: relative;
+}
+
+.draw-path {
+  stroke-dasharray: var(--len, 1200);
+  stroke-dashoffset: var(--len, 1200);
+  animation: var(--animate-draw);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  * {
-    animation: none !important;
-    transition: none !important;
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+  .draw-path {
+    stroke-dashoffset: 0;
   }
 }

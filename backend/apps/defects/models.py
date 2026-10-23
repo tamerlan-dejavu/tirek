@@ -52,6 +52,43 @@ OPEN_STATUSES = [
 ]
 
 
+class DefectPriority(models.TextChoices):
+    """Urgency of elimination. Separate from the danger degree: set by the engineer."""
+
+    URGENT = "urgent", "Срочно"
+    HIGH = "high", "Высокий"
+    NORMAL = "normal", "Обычный"
+    LOW = "low", "Низкий"
+
+
+# Default priority suggested from the approved danger degree; the engineer may override it
+PRIORITY_BY_RISK = {
+    RiskCategory.R1: DefectPriority.URGENT,
+    RiskCategory.R2: DefectPriority.HIGH,
+    RiskCategory.R3: DefectPriority.NORMAL,
+    RiskCategory.R4: DefectPriority.LOW,
+}
+
+
+class DefectCategory(models.Model):
+    """
+    Kind of defect (трещины, протечки, коррозия…). A reference list maintained by the
+    administrator and extended over time from accumulated statistics.
+    """
+
+    code = models.SlugField(max_length=48, primary_key=True)
+    name = models.CharField(max_length=128, unique=True)
+    description = models.CharField(max_length=500, blank=True)
+    sort_order = models.PositiveSmallIntegerField(default=100)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["sort_order", "name"]
+
+    def __str__(self):
+        return self.name
+
+
 class Defect(UUIDModel):
     number = models.CharField(max_length=32, unique=True)  # DEF-2026-0001
     building = models.ForeignKey(
@@ -61,6 +98,12 @@ class Defect(UUIDModel):
         "buildings.BuildingElement", on_delete=models.PROTECT, related_name="defects"
     )
     location = models.CharField("Место", max_length=255, blank=True)
+    category = models.ForeignKey(
+        DefectCategory, null=True, blank=True, on_delete=models.PROTECT, related_name="defects"
+    )
+    priority = models.CharField(
+        max_length=8, choices=DefectPriority.choices, blank=True, db_index=True
+    )  # empty until the engineer assesses the defect
     inspection = models.ForeignKey(
         "inspections.Inspection",
         null=True,
