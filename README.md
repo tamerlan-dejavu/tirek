@@ -1,7 +1,8 @@
 # Tirek — MVP 1.0
 
 Цифровая платформа инженерного сопровождения многоквартирных жилых домов:
-паспорт → обследование → дефекты → проверка и риск → план мероприятий → публикация для ОСИ → PDF-отчёт → контроль устранения.
+паспорт → обследование → дефекты → проверка и риск → план мероприятий и ППР → публикация для ОСИ → PDF-отчёт → контроль устранения.
+Параллельно — заявки жителей через диспетчерский модуль.
 
 Модульный монолит (ТЗ 8): Django + DRF backend и Next.js frontend в одном репозитории; вся бизнес-логика и проверка прав — на сервере.
 
@@ -63,7 +64,7 @@
 
 ```
 tirek/
-├── backend/                     Django 5.2 + DRF, Python 3.13
+├── backend/                     Django 5.2 + DRF, Python 3.12+
 │   ├── config/                  settings (base/dev/test/prod), urls, celery
 │   ├── apps/
 │   │   ├── core/                UUID-модели, единая точка авторизации (access.py), идемпотентность
@@ -73,8 +74,9 @@ tirek/
 │   │   ├── checklists/     M05  шаблоны чек-листов с неизменяемыми опубликованными версиями
 │   │   ├── inspections/    M05  обследования, ответы, проверки, исправления новой версией
 │   │   ├── defects/        M06  реестр дефектов, повторные наблюдения, история статусов
-│   │   ├── risks/          M07  экспертная оценка R1–R4 с обоснованием и ревизиями
-│   │   ├── workorders/     M08  мероприятия, разделение ответственности, история
+│   │   ├── risks/          M07  оценка R1–R4: расчёт-подсказка (methodology.py) + решение инженера, ревизии
+│   │   ├── workorders/     M08  мероприятия, разделение ответственности, предварительный план и ППР (planning.py)
+│   │   ├── service_requests/    заявки (диспетчерский модуль, 7 статусов), опросы жителей
 │   │   ├── files/          M09  приватное хранилище (S3 в prod, том в dev), проверка типа, подписанные ссылки
 │   │   ├── portal/         M10  кабинет ОСИ (только опубликованное)
 │   │   ├── reports/        M11  версионированные неизменяемые PDF (WeasyPrint)
@@ -82,14 +84,16 @@ tirek/
 │   │   ├── analytics/      M12  базовые показатели
 │   │   └── notifications/       уведомления, срочные оповещения об опасных дефектах
 │   ├── templates/reports/       HTML-шаблон PDF-отчёта
-│   └── tests/                   pytest: изоляция организаций, сквозной цикл, авторизация
+│   └── tests/                   pytest: изоляция, сквозной цикл, роли, паспорт, реестр, риск, план, заявки
 ├── frontend/                    Next.js 15 (App Router), React 19, TypeScript, Tailwind 4
 │   ├── src/app/
-│   │   ├── (public)/            лендинг (тёмная тема)
-│   │   ├── (auth)/              вход, приглашение, восстановление пароля
-│   │   ├── (platform)/          рабочее место поставщика: главная, дома, карточка здания (8 вкладок),
-│   │   │                        обследования, чек-лист на мобильном, дефекты, план работ, отчёты, админка
-│   │   └── (osi)/osi/           кабинет ОСИ
+│   │   ├── (public)/            лендинг
+│   │   ├── (entry)/login/       вход: «Кто вы?» (демо) или email + пароль
+│   │   ├── (auth)/              приглашение, восстановление пароля
+│   │   ├── (platform)/          рабочее место поставщика: главная, заявки, дома и паспорт, обследования,
+│   │   │                        чек-лист на мобильном, дефекты, обслуживание и ППР, отчёты, справочники
+│   │   ├── (osi)/osi/           кабинет ОСИ
+│   │   └── (resident)/resident/ кабинет жителя: заявки, опросы, работы в доме
 │   ├── src/components/          UI-kit (Badge/RiskBadge/ApprovalTag, Button, Card, Table, States), списки
 │   ├── src/lib/                 API-клиент (CSRF, Idempotency-Key), типы, статусы, права для UI
 │   └── e2e/                     Playwright (desktop + mobile)
@@ -111,6 +115,22 @@ tirek/
 | `make schema` | OpenAPI → типы для frontend (`src/lib/api/schema.d.ts`) |
 
 Локально без Docker (backend): `cd backend && python -m venv .venv && .venv/Scripts/pip install -e ".[dev]" && pytest` — тесты используют SQLite и in-memory хранилище.
+
+## Развёртывание
+
+Production-стек — `docker-compose.prod.yml`: nginx (один origin) → Next.js и Django/gunicorn, Celery worker,
+PostgreSQL, Redis, файлы в S3. Обязательные переменные backend: `DJANGO_SECRET_KEY`, `DJANGO_ALLOWED_HOSTS`,
+`DATABASE_URL`, `REDIS_URL`, `CSRF_TRUSTED_ORIGINS`, `STORAGE_BACKEND=s3` и `S3_*`, `EMAIL_URL`, `FRONTEND_URL`;
+`DEMO_MODE` на стенде с реальными данными не включать.
+
+**Vercel подходит только для frontend.** Backend там не запустить: нужен постоянный Celery worker, системные
+библиотеки WeasyPrint и libmagic, PostgreSQL и Redis. Если frontend размещается на Vercel:
+
+1. Project → Settings → General → **Root Directory = `frontend`** (иначе Vercel находит `backend/manage.py`
+   и пытается собрать Django — сборка падает на `DJANGO_SECRET_KEY`).
+2. Environment Variables: `API_INTERNAL_URL=https://<адрес backend>` — Next.js проксирует `/api/*` на backend,
+   поэтому cookie сессии остаётся на домене frontend.
+3. На backend добавить домен Vercel в `CSRF_TRUSTED_ORIGINS`, адрес backend — в `DJANGO_ALLOWED_HOSTS`.
 
 ## Документация
 
