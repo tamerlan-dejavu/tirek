@@ -6,7 +6,7 @@ from django.conf import settings
 from django.core.files.base import ContentFile
 from django.http import FileResponse, HttpResponseRedirect
 from PIL import Image, ImageOps
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import NotFound, ValidationError
 
 from .models import FileKind, StoredFile
 
@@ -52,8 +52,13 @@ def _sanitize_image(data: bytes, mime: str) -> tuple[bytes, int, int]:
 def file_response(stored: StoredFile):
     """Deliver a file after the caller has checked access: signed redirect or streamed."""
     if settings.FILE_DOWNLOAD_MODE == "proxy":
+        try:
+            handle = stored.file.open("rb")
+        except FileNotFoundError as exc:
+            # The record survives but the binary is gone (e.g. ephemeral disk was reset)
+            raise NotFound("Файл недоступен в хранилище.") from exc
         response = FileResponse(
-            stored.file.open("rb"), content_type=stored.content_type, filename=stored.original_name
+            handle, content_type=stored.content_type, filename=stored.original_name
         )
         response["Cache-Control"] = "private, no-store"
         return response

@@ -248,3 +248,21 @@ def test_empty_relations_render_as_null_not_method_repr(roles):
     )
     row = client_for(roles.engineer_a).get(f"/api/v1/work-orders/{wo.pk}/").json()
     assert row["author_name"] is None
+
+
+def test_missing_binary_is_404_not_500(roles, settings, tmp_path):
+    """A file record whose binary is gone (ephemeral disk) must not crash the download."""
+    from apps.files.models import StoredFile
+
+    settings.FILE_DOWNLOAD_MODE = "proxy"
+    stored = StoredFile.objects.create(
+        file="missing/x.jpg",
+        original_name="x.jpg",
+        content_type="image/jpeg",
+        size=1,
+        sha256="0" * 64,
+        building=roles.building,
+        uploaded_by=roles.field_a,
+    )
+    r = client_for(roles.field_a).get(f"/api/v1/files/{stored.pk}/download/")
+    assert r.status_code == 404
