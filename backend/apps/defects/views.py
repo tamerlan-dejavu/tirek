@@ -67,7 +67,10 @@ class DefectViewSet(BuildingScopedViewSet):
     def perform_create(self, serializer):
         access.require(self.request.user, serializer.validated_data["building"].pk, *FIELD)
         self._guard_priority(serializer, serializer.validated_data["building"].pk)
-        serializer.save(created_by=self.request.user, number=services.next_number())
+        defect = serializer.save(created_by=self.request.user, number=services.next_number())
+        # Inspection defects go to review together with the inspection; standalone ones at once
+        if defect.inspection_id is None:
+            services.send_to_review(defect, self.request, "Зарегистрирован вне обследования")
 
     def _guard_priority(self, serializer, building_id):
         """Priority is an engineering decision: only the reviewing engineer sets it."""
@@ -98,9 +101,9 @@ class DefectViewSet(BuildingScopedViewSet):
         """After clarification the specialist sends the defect back for review."""
         defect = self.get_object()
         access.require(request.user, defect.building_id, *FIELD)
-        services.change_status(
-            defect, DefectStatus.IN_REVIEW, request, request.data.get("comment", "")
-        )
+        data = CommentSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        services.send_to_review(defect, request, data.validated_data["comment"])
         return Response(self.get_serializer(defect).data)
 
     @action(detail=True, methods=["post"], url_path="request-clarification")
