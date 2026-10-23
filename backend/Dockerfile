@@ -16,5 +16,5 @@ COPY . .
 RUN pip install .
 RUN DJANGO_SETTINGS_MODULE=config.settings.prod DJANGO_SECRET_KEY=build \
     DATABASE_URL=sqlite:////tmp/build.db python manage.py collectstatic --noinput
-RUN useradd --system --uid 1001 app && chown -R app /app
+RUN useradd --system --create-home --uid 1001 app && chown -R app /app
 USER app
