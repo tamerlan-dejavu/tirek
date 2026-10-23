@@ -18,12 +18,12 @@ services:
     runtime: docker
     plan: free
     region: frankfurt
-    dockerfilePath: ./backend/Dockerfile
-    dockerContext: ./backend
-    dockerCommand: sh bin/start.sh
+    # Root Dockerfile builds the backend (start command is its CMD: bin/start.sh)
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     autoDeploy: true
     buildFilter:
-      paths: ["backend/**"]
+      paths: ["backend/**", "Dockerfile", "render.yaml"]
     envVars:
       - key: DJANGO_SETTINGS_MODULE
         value: config.settings.prod
