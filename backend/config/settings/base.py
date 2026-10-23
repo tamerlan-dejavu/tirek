@@ -182,7 +182,8 @@ DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="Tirek <no-reply@tirek.lo
 FRONTEND_URL = env("FRONTEND_URL", default="http://localhost:3000")
 
 CELERY_BROKER_URL = env("REDIS_URL", default="redis://localhost:6379/0")
-CELERY_TASK_ALWAYS_EAGER = False
+# true = run PDF / e-mail tasks inside the request: for hosting without a worker (Render free)
+CELERY_TASK_ALWAYS_EAGER = env.bool("CELERY_TASK_ALWAYS_EAGER", default=False)
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework.authentication.SessionAuthentication"],

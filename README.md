@@ -123,6 +123,23 @@ PostgreSQL, Redis, файлы в S3. Обязательные переменны
 `DATABASE_URL`, `REDIS_URL`, `CSRF_TRUSTED_ORIGINS`, `STORAGE_BACKEND=s3` и `S3_*`, `EMAIL_URL`, `FRONTEND_URL`;
 `DEMO_MODE` на стенде с реальными данными не включать.
 
+### Демо-стенд: backend на Render + frontend на Vercel
+
+Backend описан в [render.yaml](render.yaml) (Blueprint): PostgreSQL и API-сервис из `backend/Dockerfile`.
+При старте `backend/bin/start.sh` применяет миграции, загружает демо-данные (при `DEMO_MODE=true`) и запускает gunicorn.
+
+1. render.com → **New → Blueprint** → репозиторий `tirek` → Render прочитает `render.yaml`.
+   Укажите `CSRF_TRUSTED_ORIGINS` и `FRONTEND_URL` = адрес frontend на Vercel (например `https://tirek.vercel.app`) → **Apply**.
+2. Дождитесь деплоя и проверьте `https://<сервис>.onrender.com/api/v1/health/` → `{"status": "ok"}`.
+3. Vercel: Root Directory = `frontend`, переменная `API_INTERNAL_URL=https://<сервис>.onrender.com` → Redeploy.
+
+Ограничения бесплатного плана (для показа, не для реальных данных):
+- сервис засыпает через 15 минут без запросов, первый запрос после этого идёт около минуты;
+- бесплатная база Render удаляется через 30 дней;
+- фоновых воркеров нет: PDF и письма выполняются прямо в запросе (`CELERY_TASK_ALWAYS_EAGER=true`), письма пишутся в лог;
+- загруженные файлы хранятся на диске сервиса и пропадают при перезапуске — для постоянного хранения задайте
+  `STORAGE_BACKEND=s3` и `S3_*` (например, Cloudflare R2).
+
 **Vercel подходит только для frontend.** Backend там не запустить: нужен постоянный Celery worker, системные
 библиотеки WeasyPrint и libmagic, PostgreSQL и Redis. Если frontend размещается на Vercel:
 

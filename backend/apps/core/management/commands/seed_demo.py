@@ -59,7 +59,7 @@ from apps.service_requests.models import (
 )
 from apps.workorders.models import Priority, WorkOrder, WorkOrderEvent, WorkOrderStatus
 
-PASSWORD = "tirek-demo-2026"  # noqa: S105 — local demo data only, guarded by DEBUG
+PASSWORD = "tirek-demo-2026"  # noqa: S105 — demo data only, guarded by DEBUG / DEMO_MODE
 
 USERS = [
     (
@@ -113,8 +113,9 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args, **options):
-        if not settings.DEBUG:
-            raise CommandError("seed_demo is only allowed with DEBUG=true")
+        # A demo stand runs production settings (DEBUG off) with DEMO_MODE on
+        if not (settings.DEBUG or settings.DEMO_MODE):
+            raise CommandError("seed_demo is only allowed with DEBUG=true or DEMO_MODE=true")
 
         provider, _ = Organization.objects.get_or_create(
             name="Инженерный центр «Тирек» (демо)", defaults={"type": OrganizationType.PROVIDER}
