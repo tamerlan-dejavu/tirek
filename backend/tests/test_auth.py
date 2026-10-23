@@ -60,3 +60,23 @@ def test_blocked_user_cannot_log_in(world):
         "/api/v1/auth/login/", {"email": "field@a.test", "password": "x-test-password-1"}
     )
     assert r.status_code == 400
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "/api/v1/auth/login/",
+        "/api/v1/auth/password-reset/",
+        "/api/v1/auth/demo/login/",
+        "/api/v1/auth/invite/accept/",
+    ],
+)
+def test_anonymous_posts_require_csrf_token(url, world, settings):
+    """«Login CSRF»: a cross-site form must not be able to log the victim in (or reset)."""
+    settings.DEMO_MODE = True
+    api = APIClient(enforce_csrf_checks=True)
+    assert api.post(url, {"email": "x@y.z", "key": "engineer"}, format="json").status_code == 403
+    api.get("/api/v1/auth/csrf/")
+    token = api.cookies["csrftoken"].value
+    r = api.post(url, {"email": "x@y.z", "key": "engineer"}, format="json", HTTP_X_CSRFTOKEN=token)
+    assert r.status_code != 403

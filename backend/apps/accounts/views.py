@@ -2,7 +2,7 @@ from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
 from django.db import transaction
 from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from rest_framework import generics, status
 from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.exceptions import NotFound, ValidationError
@@ -33,8 +33,14 @@ def csrf(request):
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+# DRF checks CSRF only for an existing session, so anonymous endpoints (login, password reset)
+# would accept cross-site posts («login CSRF»). They are protected explicitly.
+anonymous_csrf = method_decorator(csrf_protect, name="dispatch")
+
+
 # Not atomic: a failed attempt must be recorded even though the response is an error,
 # otherwise ATOMIC_REQUESTS rolls it back and the lockout never triggers.
+@anonymous_csrf
 @method_decorator(transaction.non_atomic_requests, name="dispatch")
 class LoginView(APIView):
     permission_classes = [AllowAny]
@@ -81,6 +87,7 @@ def demo_accounts(request):
     )
 
 
+@anonymous_csrf
 class DemoLoginView(APIView):
     """Password-less login into a FIXED demo account. Disabled (404) outside DEMO_MODE."""
 
@@ -121,6 +128,7 @@ class MeView(generics.RetrieveUpdateAPIView):
         return self.request.user
 
 
+@anonymous_csrf
 class SetPasswordView(APIView):
     """Completes an invite or a password reset using a one-time token."""
 
@@ -147,6 +155,7 @@ class PasswordResetConfirmView(SetPasswordView):
     purpose = OneTimeToken.Purpose.PASSWORD_RESET
 
 
+@anonymous_csrf
 class PasswordResetRequestView(APIView):
     permission_classes = [AllowAny]
     throttle_classes = [ScopedRateThrottle]
