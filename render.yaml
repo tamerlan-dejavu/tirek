@@ -1,0 +1,51 @@
+# Render Blueprint: backend API + PostgreSQL for the demo stand.
+# Frontend runs on Vercel (Root Directory = frontend, API_INTERNAL_URL = URL of tirek-api).
+#
+# Free plan, deliberately without a worker and Redis:
+#   - PDF and e-mail tasks run inside the request (CELERY_TASK_ALWAYS_EAGER);
+#   - uploaded files live on the instance disk and are lost on redeploy or restart.
+#     For durable files set STORAGE_BACKEND=s3 and S3_* (e.g. Cloudflare R2).
+databases:
+  - name: tirek-db
+    plan: free
+    region: frankfurt
+    databaseName: tirek
+    user: tirek
+
+services:
+  - type: web
+    name: tirek-api
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    dockerCommand: sh bin/start.sh
+    autoDeploy: true
+    buildFilter:
+      paths: ["backend/**"]
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.prod
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: tirek-db
+          property: connectionString
+      - key: DJANGO_ALLOWED_HOSTS
+        value: .onrender.com
+      # Vercel address of the frontend, e.g. https://tirek.vercel.app
+      - key: CSRF_TRUSTED_ORIGINS
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      # Demo stand: «Кто вы?» role picker and demo data. Turn off before real users.
+      - key: DEMO_MODE
+        value: "true"
+      - key: CELERY_TASK_ALWAYS_EAGER
+        value: "true"
+      - key: STORAGE_BACKEND
+        value: filesystem
+      - key: WEB_CONCURRENCY
+        value: "2"
