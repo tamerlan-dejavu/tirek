@@ -125,11 +125,14 @@ PostgreSQL, Redis, файлы в S3. Обязательные переменны
 
 ### Демо-стенд: backend на Render + frontend на Vercel
 
-Backend описан в [render.yaml](render.yaml) (Blueprint): PostgreSQL и API-сервис из `backend/Dockerfile`.
+Backend описан в [render.yaml](render.yaml) (Blueprint): PostgreSQL и API-сервис из корневого [Dockerfile](Dockerfile)
+(тот же образ, что stage `prod` в `backend/Dockerfile`, но собирается из корня репозитория).
 При старте `backend/bin/start.sh` применяет миграции, загружает демо-данные (при `DEMO_MODE=true`) и запускает gunicorn.
 
 1. render.com → **New → Blueprint** → репозиторий `tirek` → Render прочитает `render.yaml`.
    Укажите `CSRF_TRUSTED_ORIGINS` и `FRONTEND_URL` = адрес frontend на Vercel (например `https://tirek.vercel.app`) → **Apply**.
+   Создавать сервис именно через Blueprint: он же создаёт базу и прописывает `DATABASE_URL`, `DJANGO_SECRET_KEY` и
+   остальные переменные. У сервиса, созданного вручную через «New → Web Service», их нет — он не запустится.
 2. Дождитесь деплоя и проверьте `https://<сервис>.onrender.com/api/v1/health/` → `{"status": "ok"}`.
 3. Vercel: Root Directory = `frontend`, переменная `API_INTERNAL_URL=https://<сервис>.onrender.com` → Redeploy.
 

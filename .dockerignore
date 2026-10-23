@@ -1,0 +1,10 @@
+# Root build context = backend only (see ./Dockerfile)
+*
+!backend
+backend/.venv
+backend/**/__pycache__
+backend/.pytest_cache
+backend/*.egg-info
+backend/staticfiles
+backend/media
+backend/private_media
