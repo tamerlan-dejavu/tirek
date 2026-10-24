@@ -47,6 +47,7 @@ export function ReportList({ buildingId, audience = "provider" }: { buildingId?:
           columns={[
             {
               key: "n",
+              primary: true,
               header: "Обследование",
               render: (r) => (
                 <span className="font-mono text-[13px]">

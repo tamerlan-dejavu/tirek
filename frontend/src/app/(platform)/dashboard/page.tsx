@@ -85,6 +85,7 @@ export default function DashboardPage() {
                   },
                   {
                     key: "what",
+                    primary: true,
                     header: "Дефект · место",
                     render: (r) => (
                       <div className="min-w-[180px]">
