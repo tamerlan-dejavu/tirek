@@ -121,6 +121,16 @@
     font-family: var(--font-display);
     letter-spacing: -0.02em;
   }
+  /* Grid items may shrink below their content (tables and diagrams scroll inside their own
+     container); otherwise one wide child stretches the whole page past a phone screen. */
+  :where(.grid) > * {
+    min-width: 0;
+  }
+  /* Long values (emails, user agents, file names) wrap instead of widening the layout */
+  dd,
+  td {
+    overflow-wrap: anywhere;
+  }
   :focus-visible {
     outline: 2px solid var(--color-accent);
     outline-offset: 2px;
@@ -189,4 +199,12 @@
   .draw-path {
     stroke-dashoffset: 0;
   }
+}
+
+/* Horizontal scrollers (segmented controls, chip bars) without a visible scrollbar */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
