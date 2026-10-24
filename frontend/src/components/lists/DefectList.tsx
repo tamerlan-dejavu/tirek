@@ -134,6 +134,7 @@ function DefectListInner({
               },
               {
                 key: "type",
+                primary: true,
                 header: buildingId ? "Дефект и место" : "Дефект · объект · место",
                 render: (r) => (
                   <div className="min-w-[200px]">

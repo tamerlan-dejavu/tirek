@@ -197,7 +197,7 @@ export default function PassportPage({ params }: { params: Promise<{ id: string 
                     rows={rows}
                     onRowClick={canEditEntries ? setEditing : undefined}
                     columns={[
-                      { key: "n", header: "Элемент", render: (e) => <span className="font-medium text-ink">{e.element_name}</span> },
+                      { key: "n", primary: true, header: "Элемент", render: (e) => <span className="font-medium text-ink">{e.element_name}</span> },
                       { key: "p", header: "Наличие", render: (e) => <StatusBadge {...PRESENCE[e.presence]} /> },
                       {
                         key: "c",

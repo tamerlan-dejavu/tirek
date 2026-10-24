@@ -26,7 +26,7 @@ export default function BuildingDocuments({ params }: { params: Promise<{ id: st
         <Table
           rows={data.results}
           columns={[
-            { key: "title", header: "Документ", render: (d) => d.title },
+            { key: "title", primary: true, header: "Документ", render: (d) => d.title },
             { key: "date", header: "Дата", render: (d) => <span className="font-mono">{formatDate(d.document_date)}</span> },
             { key: "pub", header: "Доступ ОСИ", render: (d) => (d.is_published ? "да" : "нет") },
             {

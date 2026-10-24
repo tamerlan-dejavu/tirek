@@ -76,6 +76,7 @@ function MaintenanceRules() {
               },
               {
                 key: "t",
+                primary: true,
                 header: "Работа",
                 render: (r) => (
                   <div className="min-w-[220px]">
@@ -180,6 +181,7 @@ function DefectCategories() {
             columns={[
               {
                 key: "name",
+                primary: true,
                 header: "Категория",
                 render: (c) => (
                   <span className={c.is_active ? "text-ink" : "text-faint line-through"}>
@@ -287,7 +289,7 @@ export default function ReferencePage() {
                       <span className="font-mono text-[13px] text-muted">{r.code}</span>
                     ),
                   },
-                  { key: "name", header: "Элемент", render: (r) => r.name },
+                  { key: "name", primary: true, header: "Элемент", render: (r) => r.name },
                   {
                     key: "group",
                     header: "Группа",
@@ -313,7 +315,7 @@ export default function ReferencePage() {
                 caption="Шаблоны чек-листов"
                 rows={d.results}
                 columns={[
-                  { key: "n", header: "Шаблон", render: (t) => t.name },
+                  { key: "n", primary: true, header: "Шаблон", render: (t) => t.name },
                   {
                     key: "v",
                     header: "Опубликованная версия",

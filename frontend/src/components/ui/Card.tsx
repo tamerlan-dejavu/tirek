@@ -26,15 +26,15 @@ export function Card({
   return (
     <section className={clsx("rounded-lg border border-line bg-surface", className)}>
       {(title || actions) && (
-        <header className="flex min-h-12 items-center justify-between gap-3 border-b border-line px-5 py-2.5 md:px-6">
-          <h2 className="flex items-baseline gap-2.5 text-[15px] font-semibold tracking-[-0.01em]">
+        <header className="flex min-h-12 flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-line px-4 py-2.5 sm:px-5 md:px-6">
+          <h2 className="flex min-w-0 items-baseline gap-2.5 text-[15px] font-semibold tracking-[-0.01em]">
             {index && <span className="font-mono text-[11px] font-normal text-faint">{index}</span>}
             {title}
           </h2>
-          {actions && <div className="flex items-center gap-2">{actions}</div>}
+          {actions && <div className="flex max-w-full min-w-0 items-center gap-2">{actions}</div>}
         </header>
       )}
-      <div className={clsx(flush ? "" : "p-5 md:p-6", bodyClassName)}>{children}</div>
+      <div className={clsx(flush ? "" : "p-4 sm:p-5 md:p-6", bodyClassName)}>{children}</div>
     </section>
   );
 }

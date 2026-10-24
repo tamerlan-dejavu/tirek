@@ -54,7 +54,7 @@ export default function OrganizationsPage() {
               rows={data.results}
               onRowClick={setSelected}
               columns={[
-                { key: "name", header: "Организация", render: (o) => o.name },
+                { key: "name", primary: true, header: "Организация", render: (o) => o.name },
                 { key: "type", header: "Тип", render: (o) => (o.type === "provider" ? "Поставщик" : "Заказчик") },
                 { key: "bin", header: "БИН", render: (o) => <span className="font-mono">{o.bin || "—"}</span> },
               ]}

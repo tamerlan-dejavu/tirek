@@ -153,6 +153,7 @@ export default function RequestsPage() {
                 },
                 {
                   key: "what",
+                  primary: true,
                   header: "Проблема · место",
                   render: (r) => (
                     <div className="min-w-[220px]">

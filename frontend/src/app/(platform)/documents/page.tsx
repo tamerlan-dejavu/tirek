@@ -51,6 +51,7 @@ export default function DocumentsPage() {
               columns={[
                 {
                   key: "t",
+                  primary: true,
                   header: "Документ",
                   render: (r) => (
                     <span className="flex items-center gap-2">

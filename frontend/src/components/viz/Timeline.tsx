@@ -14,7 +14,8 @@ const WEEKDAY = new Intl.DateTimeFormat("ru-RU", { weekday: "short" });
  * top in their own group, so nothing late disappears into the past.
  */
 export function MaintenanceTimeline({ items, limit }: { items: WorkOrder[]; limit?: number }) {
-  const dated = items.filter((w) => w.planned_date ?? w.recommended_date);
+  const when = (w: WorkOrder) => w.planned_date ?? w.recommended_date ?? "";
+  const dated = items.filter(when).sort((a, b) => when(a).localeCompare(when(b)));
   const overdue = dated.filter((w) => OPEN_WORK.includes(w.status) && (daysFrom(w.planned_date) ?? 1) < 0);
   const upcoming = dated.filter((w) => !overdue.includes(w));
   const undated = items.filter((w) => !w.planned_date && !w.recommended_date);
