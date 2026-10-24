@@ -79,6 +79,7 @@ export function WorkOrderTable({
         },
         {
           key: "title",
+          primary: true,
           header: "Мероприятие",
           render: (r) => (
             <div className="min-w-[200px]">

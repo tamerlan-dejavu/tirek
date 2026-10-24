@@ -31,6 +31,7 @@ export function InspectionList({ buildingId, status }: { buildingId?: string; st
           columns={[
             {
               key: "number",
+              primary: true,
               header: "№",
               render: (r) => (
                 <span className="font-mono text-[13px]">
