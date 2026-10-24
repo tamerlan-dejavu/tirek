@@ -16,6 +16,19 @@ import { useApi } from "@/lib/api/hooks";
 import type { DemoAccount, Me } from "@/lib/api/types";
 import { homeFor } from "@/lib/permissions";
 
+/** Tell «wrong password» apart from «server unreachable»: they need different actions. */
+function loginErrorText(err: unknown): string {
+  if (err instanceof ApiError) {
+    if (err.status === 429) return "Слишком много попыток. Попробуйте через 15 минут.";
+    if (err.code === "invalid_credentials") return "Неверный email или пароль.";
+    if (err.status === 400) return "Проверьте email и пароль.";
+  }
+  return SERVER_DOWN;
+}
+
+const SERVER_DOWN =
+  "Сервер не отвечает. Демо-стенд после простоя запускается около минуты — попробуйте ещё раз чуть позже.";
+
 function EmailLoginForm({ compact = false }: { compact?: boolean }) {
   const router = useRouter();
   const params = useSearchParams();
@@ -34,11 +47,7 @@ function EmailLoginForm({ compact = false }: { compact?: boolean }) {
       });
       router.replace(params.get("next") ?? homeFor(me));
     } catch (err) {
-      setError(
-        err instanceof ApiError && err.status === 429
-          ? "Слишком много попыток. Попробуйте через 15 минут."
-          : "Неверный email или пароль.",
-      );
+      setError(loginErrorText(err));
     } finally {
       setPending(false);
     }
@@ -50,11 +59,19 @@ function EmailLoginForm({ compact = false }: { compact?: boolean }) {
         <div>
           <div className="label-tech mb-2">Платформа инженерного сопровождения</div>
           <h1 className="text-[28px] font-semibold tracking-[-0.02em]">Вход в Tirek</h1>
-          <p className="mt-1.5 text-sm text-muted">Доступ выдаёт администратор вашей организации по приглашению.</p>
+          <p className="mt-1.5 text-sm text-muted">
+            Доступ выдаёт администратор вашей организации по приглашению.
+          </p>
         </div>
       )}
       <Field label="Email" name="email" type="email" autoComplete="username" required />
-      <Field label="Пароль" name="password" type="password" autoComplete="current-password" required />
+      <Field
+        label="Пароль"
+        name="password"
+        type="password"
+        autoComplete="current-password"
+        required
+      />
       {error && (
         <p role="alert" className="rounded-md bg-critical-soft px-3 py-2 text-sm text-critical-ink">
           {error}
@@ -96,14 +113,19 @@ function DemoEntry({ accounts }: { accounts: DemoAccount[] }) {
       <main className="mx-auto max-w-[1240px] px-5 py-12 md:px-8 md:py-16">
         <div className="max-w-2xl">
           <div className="label-tech mb-3">Вход в Tirek</div>
-          <h1 className="text-[clamp(2rem,4.5vw,3rem)] leading-[1.05] font-bold tracking-[-0.035em]">Кто вы?</h1>
+          <h1 className="text-[clamp(2rem,4.5vw,3rem)] leading-[1.05] font-bold tracking-[-0.035em]">
+            Кто вы?
+          </h1>
           <p className="mt-4 text-[17px] leading-relaxed text-muted">
-            Выберите роль — откроется рабочее место с демонстрационными данными. Сменить роль можно в любой момент из
-            верхней панели.
+            Выберите роль — откроется рабочее место с демонстрационными данными. Сменить роль можно
+            в любой момент из верхней панели.
           </p>
         </div>
         <div className="mt-10">
-          <RolePicker accounts={accounts} onSignedIn={(home) => router.replace(params.get("next") ?? home)} />
+          <RolePicker
+            accounts={accounts}
+            onSignedIn={(home) => router.replace(params.get("next") ?? home)}
+          />
         </div>
         <div className="mt-12 max-w-sm border-t border-line pt-6">
           <button
@@ -112,7 +134,11 @@ function DemoEntry({ accounts }: { accounts: DemoAccount[] }) {
             className="flex items-center gap-2 text-sm text-muted hover:text-ink"
           >
             У меня есть учётная запись — войти по email
-            <ChevronDown className={showEmail ? "size-4 rotate-180 transition-transform" : "size-4 transition-transform"} />
+            <ChevronDown
+              className={
+                showEmail ? "size-4 rotate-180 transition-transform" : "size-4 transition-transform"
+              }
+            />
           </button>
           {showEmail && (
             <div className="mt-5">
@@ -121,8 +147,8 @@ function DemoEntry({ accounts }: { accounts: DemoAccount[] }) {
           )}
         </div>
         <p className="mt-12 max-w-2xl text-xs text-faint">
-          Демо-стенд: все дома, люди и записи вымышлены. Беспарольный вход работает только для демонстрационных
-          аккаунтов и отключается в рабочей среде.
+          Демо-стенд: все дома, люди и записи вымышлены. Беспарольный вход работает только для
+          демонстрационных аккаунтов и отключается в рабочей среде.
         </p>
       </main>
     </div>
@@ -132,9 +158,25 @@ function DemoEntry({ accounts }: { accounts: DemoAccount[] }) {
 function LoginScreen() {
   const demo = useApi<{ enabled: boolean; accounts: DemoAccount[] }>("auth/demo/", ["demo"]);
   if (demo.isLoading) return <Loading />;
-  if (demo.data?.enabled && demo.data.accounts.length) return <DemoEntry accounts={demo.data.accounts} />;
+  if (demo.data?.enabled && demo.data.accounts.length)
+    return <DemoEntry accounts={demo.data.accounts} />;
   return (
     <AuthFrame>
+      {demo.error ? (
+        <div
+          role="status"
+          className="mb-6 rounded-md border border-warning/40 bg-warning-soft px-3 py-2.5 text-sm text-warning-ink"
+        >
+          <p>{SERVER_DOWN}</p>
+          <button
+            onClick={() => demo.refetch()}
+            disabled={demo.isFetching}
+            className="mt-2 font-medium underline underline-offset-2"
+          >
+            {demo.isFetching ? "Подключение…" : "Повторить"}
+          </button>
+        </div>
+      ) : null}
       <EmailLoginForm />
     </AuthFrame>
   );
