@@ -1,5 +1,6 @@
 "use client";
 
+import clsx from "clsx";
 import { Bell, ChevronRight, LogOut, Menu, Repeat2, Search } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -70,6 +71,7 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
   const { data: unread } = useApi<{ count: number }>("notifications/unread_count/");
   const { data: demo } = useApi<{ enabled: boolean }>("auth/demo/", ["demo"]);
   const [q, setQ] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false); // phones: search opens as a second row
   const showSearch = !!me && !isCustomerOnly(me);
 
   async function logout() {
@@ -80,6 +82,7 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
   function search(e: FormEvent) {
     e.preventDefault();
     if (q.trim()) router.push(`/defects?q=${encodeURIComponent(q.trim())}`);
+    setSearchOpen(false);
   }
 
   const initials = (me?.full_name || me?.email || "?")
@@ -90,7 +93,8 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
     .toUpperCase();
 
   return (
-    <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-line bg-canvas/85 px-4 backdrop-blur md:px-6">
+    <div className="sticky top-0 z-20 border-b border-line bg-canvas/85 backdrop-blur">
+    <header className="flex h-14 items-center gap-2 px-4 sm:gap-3 md:px-6">
       <button onClick={onMenu} className="-ml-1 grid size-9 place-items-center rounded-md text-ink hover:bg-mist lg:hidden" aria-label="Открыть меню">
         <Menu className="size-5" />
       </button>
@@ -111,21 +115,32 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
       ) : (
         <span className="ml-auto hidden sm:block" />
       )}
+      {showSearch && (
+        <button
+          onClick={() => setSearchOpen((v) => !v)}
+          aria-expanded={searchOpen}
+          aria-label="Поиск по реестру дефектов"
+          className="ml-auto grid size-9 place-items-center rounded-md text-muted hover:bg-mist hover:text-ink sm:hidden"
+        >
+          <Search className="size-[18px]" strokeWidth={1.8} />
+        </button>
+      )}
 
       {demo?.enabled && (
         <button
           onClick={logout}
-          className="hidden h-8 items-center gap-1.5 rounded-md border border-line px-2.5 text-[13px] text-muted transition-colors hover:border-line-strong hover:text-ink md:inline-flex"
+          className="inline-flex size-9 shrink-0 items-center justify-center gap-1.5 rounded-md border border-line text-[13px] whitespace-nowrap text-muted transition-colors hover:border-line-strong hover:text-ink lg:h-8 lg:w-auto lg:px-2.5"
           title="Выйти и выбрать другую роль"
+          aria-label="Сменить роль"
         >
-          <Repeat2 className="size-3.5" aria-hidden />
-          Сменить роль
+          <Repeat2 className="size-4 lg:size-3.5" aria-hidden />
+          <span className="hidden lg:inline">Сменить роль</span>
         </button>
       )}
 
       <Link
         href="/settings#notifications"
-        className="relative ml-auto grid size-9 place-items-center rounded-md text-muted hover:bg-mist hover:text-ink sm:ml-0"
+        className={clsx("relative grid size-9 place-items-center rounded-md text-muted hover:bg-mist hover:text-ink sm:ml-0", !showSearch && "ml-auto")}
         aria-label={unread?.count ? `Уведомления: ${unread.count} непрочитанных` : "Уведомления"}
       >
         <Bell className="size-[18px]" strokeWidth={1.8} />
@@ -136,7 +151,7 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
         )}
       </Link>
 
-      <div className="flex items-center gap-2.5 border-l border-line pl-3">
+      <div className="flex items-center gap-2 border-l border-line pl-2 sm:gap-2.5 sm:pl-3">
         <span aria-hidden className="grid size-8 place-items-center rounded-full border border-line bg-mist font-mono text-[11px] text-ink">
           {initials}
         </span>
@@ -153,5 +168,19 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
         </button>
       </div>
     </header>
+    {searchOpen && (
+      <form onSubmit={search} role="search" className="flex items-center gap-2 border-t border-line px-4 py-2 sm:hidden">
+        <Search aria-hidden className="size-4 shrink-0 text-faint" />
+        <input
+          autoFocus
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Дефект, адрес, номер…"
+          aria-label="Поиск по реестру дефектов"
+          className="h-9 w-full bg-transparent text-[15px] outline-none placeholder:text-faint"
+        />
+      </form>
+    )}
+    </div>
   );
 }
