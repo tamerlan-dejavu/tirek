@@ -212,3 +212,57 @@ def test_repeated_observation_keeps_history(world, inspection):  # AC-17
         assert r.status_code == 201
     obs = field.get(f"/api/v1/defects/{defect_id}/observations/").json()
     assert [o["description"] for o in obs] == ["Пятно 0,5 м²", "Пятно 1,2 м²"]
+
+
+def _create(world, assignee, **extra):
+    return client_for(world.engineer_a).post(
+        "/api/v1/inspections/",
+        {
+            "building": str(world.building.pk),
+            "provider_organization": str(world.org_a.pk),
+            "template_version": str(world.version.pk),
+            "assignee": str(assignee.pk),
+            **extra,
+        },
+        format="json",
+    )
+
+
+def test_assignee_must_be_specialist_of_servicing_org(world):
+    """UC-02: the executor belongs to the provider; a foreign user cannot be assigned."""
+    assert _create(world, world.admin_b).status_code == 400  # other organization
+    assert _create(world, world.osi_rep).status_code == 400  # customer, not a specialist
+    r = client_for(world.engineer_a).post(
+        "/api/v1/inspections/",
+        {
+            "building": str(world.building.pk),
+            "provider_organization": str(world.org_b.pk),
+            "template_version": str(world.version.pk),
+            "assignee": str(world.field_a.pk),
+        },
+        format="json",
+    )
+    assert r.status_code == 400  # org_b does not service this building
+
+
+def test_assignment_gives_the_specialist_access(world):
+    from apps.organizations.models import BuildingAssignment
+
+    BuildingAssignment.objects.filter(user=world.field_a).delete()
+    assert client_for(world.field_a).get("/api/v1/buildings/").json()["count"] == 0
+    r = _create(world, world.field_a)
+    assert r.status_code == 201, r.content
+    assert (
+        client_for(world.field_a).get(f"/api/v1/inspections/{r.json()['id']}/").status_code == 200
+    )
+
+
+def test_planning_options(world):
+    url = f"/api/v1/inspections/planning-options/?building={world.building.pk}"
+    assert client_for(world.field_a).get(url).status_code == 403
+    assert client_for(world.admin_b).get(url).status_code == 403
+    body = client_for(world.engineer_a).get(url).json()
+    assert [o["id"] for o in body["organizations"]] == [str(world.org_a.pk)]
+    names = {a["name"] for a in body["organizations"][0]["assignees"]}
+    assert str(world.field_a) in names
+    assert [t["version"] for t in body["templates"]] == [str(world.version.pk)]

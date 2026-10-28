@@ -1,9 +1,20 @@
+from django.db.models import Q
+from django.utils import timezone
 from rest_framework import serializers
 
 from apps.checklists.models import AnswerType, ChecklistTemplateVersion
 from apps.core.fields import DisplayNameField
+from apps.organizations.models import (
+    BuildingOrganizationLink,
+    LinkFunction,
+    OrganizationMembership,
+    Role,
+)
 
 from .models import Inspection, InspectionAnswer, InspectionReview
+
+# Who may perform an inspection
+INSPECTORS = [Role.FIELD_SPECIALIST, Role.REVIEWING_ENGINEER]
 
 
 class InspectionSerializer(serializers.ModelSerializer):
@@ -76,6 +87,37 @@ class InspectionSerializer(serializers.ModelSerializer):
                     {"template_version": "Версию чек-листа нельзя сменить после создания."}
                 )
         building = attrs.get("building") or getattr(self.instance, "building", None)
+        provider = attrs.get("provider_organization") or getattr(
+            self.instance, "provider_organization", None
+        )
+        assignee = attrs.get("assignee")
+        if building and provider and "provider_organization" in attrs:
+            if (
+                not BuildingOrganizationLink.objects.filter(
+                    building=building,
+                    organization=provider,
+                    function=LinkFunction.TECHNICAL_SUPPORT,
+                )
+                .filter(Q(valid_to__isnull=True) | Q(valid_to__gt=timezone.now()))
+                .exists()
+            ):
+                raise serializers.ValidationError(
+                    {"provider_organization": "Организация не обслуживает это здание."}
+                )
+        if (
+            assignee
+            and provider
+            and not OrganizationMembership.objects.filter(
+                user=assignee,
+                organization=provider,
+                role__in=INSPECTORS,
+                is_active=True,
+            ).exists()
+        ):
+            # The executor must be a specialist of the servicing organization (UC-02)
+            raise serializers.ValidationError(
+                {"assignee": "Исполнитель не является специалистом обслуживающей организации."}
+            )
         version = attrs.get("template_version")
         if building and version and version.template.building_type != building.building_type:
             # ТЗ 5.5, AC-22: a building is inspected only with templates of its own type
