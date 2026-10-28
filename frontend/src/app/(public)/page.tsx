@@ -1,4 +1,4 @@
-import { ArrowRight, ArrowUpRight, Check } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Building, Building2, Check, Hotel, House, Store } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -7,7 +7,11 @@ import { HeroBuilding } from "@/components/landing/HeroBuilding";
 import { PlatformPreview } from "@/components/landing/PlatformPreview";
 import { buttonClass } from "@/components/ui/Button";
 
-export const metadata = { title: "Tirek — инженерная ясность для каждого дома" };
+export const metadata = {
+  title: "Tirek — инженерная ясность для жилых и коммерческих зданий",
+  description:
+    "Цифровая платформа инженерного сопровождения многоквартирных домов, бизнес-центров, торговых центров и гостиниц.",
+};
 
 // Set NEXT_PUBLIC_CONTACT_EMAIL in .env; without it the CTA leads to the partner login.
 const CONTACT_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL;
@@ -58,7 +62,7 @@ const PROBLEMS = [
   ["Разрозненные записи", "Акты, фото и переписка хранятся у разных людей — история дефекта теряется при смене специалиста."],
   ["Неполная техническая история", "Нельзя ответить, когда дефект появился, как развивался и что уже делали."],
   ["Запоздалое обслуживание", "Ремонт начинается после аварии, а не по плану — дороже и с риском для жителей."],
-  ["Нет общей картины", "ОСИ не видит, какие проблемы критичны, а какие могут подождать."],
+  ["Нет общей картины", "Заказчик — ОСИ, управляющая компания или владелец — не видит, какие проблемы критичны, а какие могут подождать."],
 ];
 
 const STEPS = [
@@ -66,7 +70,7 @@ const STEPS = [
   ["02", "Зафиксировать", "Дефект с фото, местом и элементом — из пункта чек-листа."],
   ["03", "Оценить", "Инженер присваивает категорию риска R1–R4 с обоснованием."],
   ["04", "Приоритизировать", "Критическое — первым; срочные случаи — немедленное уведомление."],
-  ["05", "Спланировать", "Мероприятия с ответственными и сроками; ОСИ согласовывает."],
+  ["05", "Спланировать", "Мероприятия с ответственными и сроками; заказчик согласовывает."],
   ["06", "Контролировать", "Выполнение подтверждается, инженер проверяет результат."],
 ];
 
@@ -74,7 +78,7 @@ const LIFECYCLE = [
   ["Обнаружен", "Полевой специалист", "фиксирует на объекте"],
   ["На проверке", "Проверяющий инженер", "изучает данные и фото"],
   ["Подтверждён", "Инженер", "утверждает категорию риска"],
-  ["Запланирован", "ОСИ", "согласует мероприятие"],
+  ["Запланирован", "Заказчик", "согласует мероприятие"],
   ["Устраняется", "Исполнитель", "выполняет работы"],
   ["Проверка", "Инженер", "проверяет результат"],
   ["Закрыт", "Инженер", "с основанием и историей"],
@@ -87,6 +91,32 @@ const PLAN = [
   { t: "Сезонный осмотр кровли и водостоков", m: [10, 10], tone: "bg-steel-2" },
   { t: "Подготовка к отопительному сезону", m: [8, 9], tone: "bg-steel-2" },
 ];
+const BUILDING_TYPES = [
+  { icon: House, t: "Многоквартирный жилой дом", d: "Подъезды, квартиры, кровля, подвалы, инженерные сети дома." },
+  { icon: Building2, t: "Бизнес-центр", d: "Арендопригодная площадь, арендаторы, климат, СКУД, дымоудаление." },
+  { icon: Store, t: "Торговый центр / ТРЦ", d: "Посещаемость, эскалаторы, эвакуационные пути, технологические помещения." },
+  { icon: Hotel, t: "Гостиница", d: "Номерной фонд, кухонные и технологические помещения, климатические системы." },
+  { icon: Building, t: "Иное коммерческое здание", d: "Общая модель данных с полями и элементами своего типа." },
+];
+
+const REQUEST_FLOW = [
+  ["Новая", "Житель или пользователь", "описывает проблему, место, прикладывает фото"],
+  ["Принята", "Диспетчер", "задаёт приоритет, аварии оповещают всех сразу"],
+  ["Назначена", "Диспетчер", "исполнитель и срок"],
+  ["Выполнена", "Исполнитель", "только с фото результата"],
+  ["Проверена", "Инженер или диспетчер", "не сам исполнитель"],
+  ["Закрыта", "Диспетчер", "заявитель получает уведомление и видит результат"],
+];
+
+const SECURITY = [
+  ["Изоляция организаций", "Данные одной организации недоступны другой — ни через интерфейс, ни через прямой запрос к API."],
+  ["Права проверяет сервер", "Роль, организация, связь со зданием и статус записи — при каждом запросе, а не в интерфейсе."],
+  ["Двухфакторный вход", "Код из приложения-аутентификатора для администраторов и инженеров."],
+  ["Журнал аудита", "Кто, когда и что изменил: входы, роли, доступы, утверждения, риски, публикации."],
+  ["Приватные файлы", "Фото и документы выдаются только после проверки прав; геометка из фото удаляется."],
+  ["История без перезаписи", "Оценки риска, обследования и отчёты исправляются новой версией, прежняя сохраняется."],
+];
+
 const MONTHS = ["янв", "фев", "мар", "апр", "май", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"];
 
 /* ── page ─────────────────────────────────────────────────────────────────────────────── */
@@ -104,7 +134,9 @@ export default function LandingPage() {
           <div className="hidden items-center gap-7 text-sm text-muted md:flex">
             <a href="#how" className="hover:text-ink">Как это работает</a>
             <a href="#platform" className="hover:text-ink">Платформа</a>
-            <a href="#osi" className="hover:text-ink">Для ОСИ</a>
+            <a href="#types" className="hover:text-ink">Типы зданий</a>
+            <a href="#requests" className="hover:text-ink">Заявки</a>
+            <a href="#customer" className="hover:text-ink">Для заказчика</a>
             <a href="#reports" className="hover:text-ink">Отчёты</a>
           </div>
           <Link href="/login" className={buttonClass("inverse-outline", "sm")}>
@@ -115,14 +147,15 @@ export default function LandingPage() {
         <div className="relative mx-auto grid max-w-[1240px] items-center gap-12 px-5 pt-12 pb-20 md:px-8 lg:grid-cols-[1fr_1.05fr] lg:pt-20 lg:pb-32">
           <div className="animate-[fade-up_250ms_var(--ease-precise)_both]">
             <div className="mb-7 inline-flex items-center gap-2 rounded-md border border-line bg-surface px-3 py-1.5 font-mono text-[11px] tracking-[0.1em] text-muted uppercase">
-              <span className="size-1.5 rounded-full bg-accent" /> Инженерное сопровождение МКД
+              <span className="size-1.5 rounded-full bg-accent" /> Жилые и коммерческие здания
             </div>
             <h1 className="text-[clamp(2.5rem,6vw,4.5rem)] leading-[1.03] font-bold tracking-[-0.04em]">
-              Инженерная ясность для&nbsp;каждого дома
+              Инженерная ясность для&nbsp;каждого здания
             </h1>
             <p className="mt-6 max-w-xl text-[17px] leading-relaxed text-muted md:text-lg">
-              Tirek помогает объединениям собственников понимать техническое состояние дома, документировать дефекты,
-              планировать профилактику и принимать обоснованные решения — на основе проверенных инженерных данных.
+              Tirek помогает ОСИ, управляющим компаниям и владельцам бизнес-центров, торговых центров и гостиниц понимать
+              техническое состояние здания, документировать дефекты, планировать профилактику и принимать обоснованные
+              решения — на основе проверенных инженерных данных.
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
               <a href="#contact" className={buttonClass("inverse", "lg")}>
@@ -132,9 +165,10 @@ export default function LandingPage() {
                 Посмотреть платформу
               </a>
             </div>
-            <dl className="mt-12 grid max-w-lg grid-cols-3 gap-6 border-t border-line pt-6">
+            <dl className="mt-12 grid max-w-xl grid-cols-2 gap-6 border-t border-line pt-6 sm:grid-cols-4">
               {[
                 ["R1–R4", "экспертная категория риска"],
+                ["5 типов", "жилые и коммерческие здания"],
                 ["v1 → v2", "история без перезаписи"],
                 ["PDF", "версионированные отчёты"],
               ].map(([k, v]) => (
@@ -155,11 +189,12 @@ export default function LandingPage() {
         <div className="relative border-t border-line">
           <div className="mx-auto flex max-w-[1240px] flex-col gap-4 px-5 py-10 md:flex-row md:items-center md:justify-between md:px-8">
             <p className="text-[22px] leading-snug font-medium tracking-[-0.015em] md:text-[28px]">
-              «Мы не заменяем ОСИ.
+              «Мы не заменяем заказчика.
               <br className="hidden md:block" /> Мы становимся его <span className="text-accent">техническим партнёром</span>».
             </p>
             <p className="max-w-sm text-sm text-muted">
-              Управленческие решения остаются за ОСИ. Технические выводы подтверждают ответственные инженеры.
+              Управленческие решения остаются за ОСИ, управляющей компанией или владельцем здания. Технические выводы
+              подтверждают ответственные инженеры.
             </p>
           </div>
         </div>
@@ -172,7 +207,7 @@ export default function LandingPage() {
           index="01"
           kicker="Проблема"
           title="Реактивное обслуживание — это неопределённость"
-          lead="Когда сведения о доме разбросаны по папкам, чатам и памяти специалистов, решения принимаются после аварии, а не до неё."
+          lead="Когда сведения о здании разбросаны по папкам, чатам и памяти специалистов, решения принимаются после аварии, а не до неё."
         >
           <ul className="grid gap-px overflow-hidden rounded-lg border border-line bg-line sm:grid-cols-2">
             {PROBLEMS.map(([t, d], i) => (
@@ -201,13 +236,35 @@ export default function LandingPage() {
           </ol>
         </Section>
 
+        {/* C2. BUILDING TYPES */}
+        <Section
+          id="types"
+          index="03"
+          kicker="Типы зданий"
+          title="Одна платформа — разные здания"
+          lead="Тип здания задаёт поля паспорта, классификатор элементов и шаблоны чек-листов. Шаблоны жилых и коммерческих зданий не смешиваются."
+        >
+          <ul className="grid gap-px overflow-hidden rounded-lg border border-line bg-line sm:grid-cols-2 lg:grid-cols-5">
+            {BUILDING_TYPES.map(({ icon: Icon, t, d }) => (
+              <li key={t} className="bg-surface p-6">
+                <Icon aria-hidden className="size-5 text-accent" strokeWidth={1.6} />
+                <h3 className="mt-4 text-[15px] font-semibold">{t}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted">{d}</p>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-4 text-sm text-muted">
+            Перечни элементов и чек-листы для коммерческих зданий согласуются с ответственными инженерами до работы на объекте.
+          </p>
+        </Section>
+
         {/* D. BUILDING INTELLIGENCE */}
         <Section
           id="platform"
-          index="03"
+          index="04"
           kicker="Интеллект здания"
           title="Результаты обследования становятся структурированными данными"
-          lead="Каждый дефект привязан к дому, подъезду и элементу. Схема строится из паспорта здания и честно показывает: это схема, а не цифровой двойник."
+          lead="Каждый дефект привязан к зданию, месту и элементу — подъезду, блоку, этажу или зоне. Схема строится из паспорта и честно показывает: это схема, а не цифровой двойник."
           dark
         >
           <PlatformPreview />
@@ -221,7 +278,7 @@ export default function LandingPage() {
         </Section>
 
         {/* E. DEFECT MANAGEMENT */}
-        <Section id="defects" index="04" kicker="Управление дефектами" title="Путь дефекта — от обнаружения до проверенного устранения" lead="На каждом шаге видно, кто отвечает, что сделано и на каком основании.">
+        <Section id="defects" index="05" kicker="Управление дефектами" title="Путь дефекта — от обнаружения до проверенного устранения" lead="На каждом шаге видно, кто отвечает, что сделано и на каком основании.">
           <ol className="grid gap-px overflow-hidden rounded-lg border border-line bg-line sm:grid-cols-2 md:grid-cols-4 xl:grid-cols-7">
             {LIFECYCLE.map(([s, who, what], i) => (
               <li key={s} className="relative bg-surface p-4">
@@ -239,7 +296,7 @@ export default function LandingPage() {
         </Section>
 
         {/* F. PREVENTIVE MAINTENANCE */}
-        <Section id="maintenance" index="05" kicker="Профилактика" title="План работ, который виден заранее" lead="Мероприятия создаются из подтверждённых дефектов и регламентных осмотров — с приоритетом, сроком и ответственным.">
+        <Section id="maintenance" index="06" kicker="Профилактика" title="План работ, который виден заранее" lead="Предварительный план складывается из подтверждённых дефектов и типового регламента — только для систем, которые есть в паспорте здания. Годовой график ППР с приоритетами, сроками и ответственными.">
           <div className="overflow-x-auto rounded-lg border border-line bg-surface p-5">
             <div className="min-w-[640px]">
               <div className="grid grid-cols-[220px_repeat(12,1fr)] border-b border-line pb-2">
@@ -263,12 +320,38 @@ export default function LandingPage() {
           </div>
         </Section>
 
-        {/* G. PARTNERSHIP WITH OSI */}
-        <Section id="osi" index="06" kicker="Партнёрство с ОСИ" title="Чёткое разделение ответственности" lead="Tirek усиливает ОСИ инженерной экспертизой, но не забирает его полномочия." dark>
+        {/* F2. REQUESTS */}
+        <Section
+          id="requests"
+          index="07"
+          kicker="Заявки"
+          title="От сообщения жителя до проверенного результата"
+          lead="Житель или пользователь здания сообщает о проблеме с телефона и видит каждый шаг. Выполнение подтверждается фото, а проверяет его не исполнитель."
+        >
+          <ol className="grid gap-px overflow-hidden rounded-lg border border-line bg-line sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
+            {REQUEST_FLOW.map(([s, who, what], i) => (
+              <li key={s} className="bg-surface p-4">
+                <div className="flex items-center gap-2">
+                  <span className={i === REQUEST_FLOW.length - 1 ? "size-2 rounded-full bg-healthy" : "size-2 rounded-full bg-accent"} />
+                  <span className="font-mono text-[10px] text-faint">{String(i + 1).padStart(2, "0")}</span>
+                </div>
+                <div className="mt-3 text-[15px] font-semibold">{s}</div>
+                <div className="mt-2 label-tech !normal-case !tracking-normal">{who}</div>
+                <div className="text-[13px] text-muted">{what}</div>
+              </li>
+            ))}
+          </ol>
+          <p className="mt-4 text-sm text-muted">
+            При аварии заявитель видит номера экстренных служб: Tirek не заменяет аварийные службы. Из заявки инженер может завести дефект — дальше он проходит обычную проверку.
+          </p>
+        </Section>
+
+        {/* G. PARTNERSHIP WITH THE CUSTOMER */}
+        <Section id="customer" index="08" kicker="Партнёрство с заказчиком" title="Чёткое разделение ответственности" lead="Tirek усиливает ОСИ, управляющую компанию или владельца здания инженерной экспертизой, но не забирает их полномочия." dark>
           <div className="grid gap-px overflow-hidden rounded-lg border border-line bg-line md:grid-cols-2">
             {[
-              ["Инженерная организация · Tirek", ["Обследует дом по стандартному чек-листу", "Фиксирует дефекты с фото и местом", "Подтверждает категории риска с обоснованием", "Рекомендует мероприятия и сроки", "Проверяет результат работ"]],
-              ["ОСИ", ["Видит утверждённые сведения о своём доме", "Согласовывает, переносит или отклоняет работы", "Фиксирует причины решений", "Скачивает отчёты и документы", "Сохраняет все организационные полномочия"]],
+              ["Инженерная организация · Tirek", ["Обследует здание по чек-листу своего типа", "Фиксирует дефекты с фото и местом", "Подтверждает категории риска с обоснованием", "Рекомендует мероприятия и сроки", "Проверяет результат работ"]],
+              ["Заказчик · ОСИ, УК, владелец", ["Видит утверждённые сведения о своих зданиях", "Согласовывает, переносит или отклоняет работы", "Фиксирует причины решений", "Скачивает отчёты и документы", "Сохраняет все организационные полномочия"]],
             ].map(([title, items]) => (
               <div key={title as string} className="bg-surface p-7 md:p-8">
                 <h3 className="label-tech !text-accent">{title as string}</h3>
@@ -285,7 +368,7 @@ export default function LandingPage() {
         </Section>
 
         {/* H. TECHNICAL REPORTING */}
-        <Section id="reports" index="07" kicker="Технические отчёты" title="Отчёт, который можно проверить" lead="PDF формируется только из утверждённого обследования. Каждая версия неизменна и хранится с контрольной суммой.">
+        <Section id="reports" index="09" kicker="Технические отчёты" title="Отчёт, который можно проверить" lead="PDF формируется только из утверждённого обследования. Каждая версия неизменна и хранится с контрольной суммой.">
           <div className="grid items-start gap-10 lg:grid-cols-[1fr_1fr]">
             <div className="rounded-lg border border-line bg-surface p-7 md:p-8">
               <div className="flex items-start justify-between border-b border-line-strong pb-4">
@@ -327,15 +410,29 @@ export default function LandingPage() {
           </div>
         </Section>
 
+        {/* H2. SECURITY */}
+        <Section id="security" index="10" kicker="Безопасность" title="Доверие к данным заложено в систему" lead="Инженерные сведения и данные жителей защищены на сервере, а не скрыты в интерфейсе." dark>
+          <ul className="grid gap-px overflow-hidden rounded-lg border border-line bg-line sm:grid-cols-2 lg:grid-cols-3">
+            {SECURITY.map(([t, d]) => (
+              <li key={t} className="bg-surface p-6">
+                <h3 className="flex items-center gap-2 text-[15px] font-semibold">
+                  <Check aria-hidden className="size-4 shrink-0 text-accent" /> {t}
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted">{d}</p>
+              </li>
+            ))}
+          </ul>
+        </Section>
+
         {/* I. FINAL CTA */}
         <section id="contact" className="relative overflow-hidden border-t border-line bg-base text-ink">
           <div className="relative mx-auto max-w-[1240px] px-5 py-24 md:px-8 md:py-28 lg:py-32">
             <div className="max-w-2xl">
               <div className="label-tech">
-                <span className="text-accent">08</span> / Начать
+                <span className="text-accent">11</span> / Начать
               </div>
-              <h2 className="mt-6 text-[clamp(2rem,4.2vw,3.25rem)] leading-[1.08] font-bold tracking-[-0.035em]">Начните с технического обследования вашего дома</h2>
-              <p className="mt-5 text-lg text-muted">Обсудим состав осмотра, сроки и то, какие сведения о доме уже есть. Без обязательств.</p>
+              <h2 className="mt-6 text-[clamp(2rem,4.2vw,3.25rem)] leading-[1.08] font-bold tracking-[-0.035em]">Начните с технического обследования вашего здания</h2>
+              <p className="mt-5 text-lg text-muted">Жилой дом, бизнес-центр, торговый центр или гостиница — обсудим состав осмотра, сроки и то, какие сведения о здании уже есть. Без обязательств.</p>
               <div className="mt-9 flex flex-wrap gap-3">
                 <a href={CONTACT_HREF} className={buttonClass("inverse", "lg")}>
                   Запросить обследование <ArrowUpRight className="size-4" />
@@ -353,7 +450,7 @@ export default function LandingPage() {
         <div className="mx-auto flex max-w-[1240px] flex-col gap-4 px-5 py-8 text-xs md:flex-row md:items-center md:justify-between md:px-8">
           <Logo />
           <p className="max-w-xl">
-            Tirek не заменяет инженерную экспертизу, работу ОСИ и фактическое обслуживание здания. Он связывает эти процессы в единую управляемую цифровую систему.
+            Tirek не заменяет инженерную экспертизу, работу ОСИ и управляющих компаний и фактическое обслуживание здания. Он связывает эти процессы в единую управляемую цифровую систему.
           </p>
         </div>
       </footer>
