@@ -10,6 +10,7 @@ class AuditAction(models.TextChoices):
     LOGOUT = "auth.logout", "Выход"
     PASSWORD_RESET = "auth.password_reset", "Восстановление пароля"
     SESSION_REVOKED = "auth.session_revoked", "Отзыв сессии"
+    MFA_CHANGED = "auth.mfa", "Изменение двухфакторной защиты"
     USER_BLOCKED = "user.blocked", "Блокировка пользователя"
     USER_INVITED = "user.invited", "Приглашение пользователя"
     ROLE_CHANGED = "membership.changed", "Изменение роли"

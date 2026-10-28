@@ -40,6 +40,7 @@ export default function BuildingLayout({ children, params }: { children: ReactNo
             )}
             <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
               <span className="font-mono text-ink">{b?.internal_code}</span>
+              {b && <span className="rounded-sm border border-line px-1.5 py-0.5 text-xs text-ink">{b.building_type_label}</span>}
               <span>{b?.city}</span>
               {b?.name && <span>· {b.name}</span>}
             </div>
@@ -62,8 +63,21 @@ export default function BuildingLayout({ children, params }: { children: ReactNo
         <dl className="grid grid-cols-2 gap-x-6 gap-y-4 px-5 py-4 sm:grid-cols-3 lg:grid-cols-6">
           <Field label="Год постройки" mono>{orUnknown(b?.year_built)}</Field>
           <Field label="Этажность" mono>{orUnknown(b?.floors)}</Field>
-          <Field label="Подъезды" mono>{orUnknown(b?.entrances)}</Field>
-          <Field label="Квартиры" mono>{orUnknown(b?.apartments)}</Field>
+          {b?.building_type === "residential" || !b ? (
+            <>
+              <Field label="Подъезды" mono>{orUnknown(b?.entrances)}</Field>
+              <Field label="Квартиры" mono>{orUnknown(b?.apartments)}</Field>
+            </>
+          ) : (
+            <>
+              <Field label="Общая площадь, м²" mono>{orUnknown(b.total_area_m2)}</Field>
+              {b.building_type === "hotel" ? (
+                <Field label="Номерной фонд" mono>{orUnknown(b.hotel_rooms)}</Field>
+              ) : (
+                <Field label="Помещения" mono>{orUnknown(b.premises)}</Field>
+              )}
+            </>
+          )}
           <Field label="Конструктивная схема">{b ? SCHEME[b.structural_scheme] ?? b.structural_scheme : "—"}</Field>
           <Field label="Последнее утв. обследование">
             {last ? (

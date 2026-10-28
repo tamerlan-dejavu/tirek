@@ -31,7 +31,7 @@ class BuildingViewSet(BuildingScopedViewSet):
     building_field = "id"
     update_roles = EDITORS
     search_fields = ["internal_code", "address", "name"]
-    filterset_fields = ["city", "structural_scheme"]
+    filterset_fields = ["city", "structural_scheme", "building_type"]
     ordering_fields = ["address", "created_at", "year_built"]
 
     def get_queryset(self):
@@ -79,6 +79,9 @@ class BuildingViewSet(BuildingScopedViewSet):
                 }
             building.save(update_fields=["field_sources"])
             log(AuditAction.BUILDING_CHANGED, building, request=self.request, changes=changed)
+            if "building_type" in changed:
+                # New type, new classifier lines; old lines stay in history, hidden
+                ensure_passport(building)
 
     @action(detail=True, methods=["get"])
     def history(self, request, pk=None):
@@ -105,10 +108,18 @@ class BuildingViewSet(BuildingScopedViewSet):
 
 
 class ElementTypeViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+    """Classifier; ?building_type= limits it to the elements of that type of building."""
+
     queryset = ElementType.objects.filter(is_active=True)
     serializer_class = ElementTypeSerializer
     pagination_class = None
     filterset_fields = ["group"]
+
+    def filter_queryset(self, queryset):
+        qs = super().filter_queryset(queryset)
+        if building_type := self.request.query_params.get("building_type"):
+            qs = qs.filter(code__in=ElementType.codes_for(building_type))
+        return qs
 
 
 class BuildingElementViewSet(BuildingScopedViewSet):
@@ -150,6 +161,14 @@ class PassportEntryViewSet(BuildingScopedViewSet):
     update_roles = EDITORS + (Role.FIELD_SPECIALIST,)
     http_method_names = ["get", "patch", "head", "options"]
     pagination_class = None
+
+    def filter_queryset(self, queryset):
+        qs = super().filter_queryset(queryset)
+        if self.action == "list" and (b := self.request.query_params.get("building")):
+            building = Building.objects.filter(pk=b).first()
+            if building:
+                qs = qs.filter(element_type__in=ElementType.codes_for(building.building_type))
+        return qs
 
     def get_serializer_context(self):
         ctx = super().get_serializer_context()

@@ -1,5 +1,7 @@
+from django.conf import settings
 from rest_framework import mixins, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
 
 from apps.core import access
@@ -41,10 +43,14 @@ class RiskAssessmentViewSet(
         data = serializer.validated_data
         factors = {f: data.pop(f, None) for f in methodology.FACTORS}
         factors = {f: v for f, v in factors.items() if v is not None}
+        if factors and not settings.FEATURE_RISK_SCORING:
+            raise ValidationError({"factors": "Расчёт риска по формуле не включён."})
         assessment = services.assess(defect, request, factors_in=factors or None, **data)
         return Response(self.get_serializer(assessment).data, status=201)
 
     @action(detail=False, methods=["get"])
     def methodology(self, request):
         """Scales, thresholds and response rules of the (preliminary) scoring methodology."""
+        if not settings.FEATURE_RISK_SCORING:
+            raise NotFound()
         return Response(methodology.as_dict())

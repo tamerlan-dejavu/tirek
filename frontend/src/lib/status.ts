@@ -195,8 +195,44 @@ export function age(iso: string): string {
 
 export const PRESENCE: Record<"present" | "absent" | "unknown", StatusMeta> = {
   present: { label: "Есть", tone: "healthy" },
-  absent: { label: "Нет в доме", tone: "neutral" },
+  absent: { label: "Нет в здании", tone: "neutral" },
   unknown: { label: "Неизвестно", tone: "warning" },
+};
+
+/** ТЗ 5.3 — mirrors backend buildings/models.py BuildingType */
+export const BUILDING_TYPE: Record<string, string> = {
+  residential: "Многоквартирный жилой дом",
+  business_center: "Бизнес-центр",
+  mall: "Торговый центр / ТРЦ",
+  hotel: "Гостиница",
+  other_commercial: "Иное коммерческое здание",
+};
+
+/** Passport «Общие сведения»: label, unit and input kind of every field of any building type */
+export const PASSPORT_FIELD: Record<string, { label: string; unit?: string; type: "text" | "number" | "scheme" }> = {
+  address: { label: "Адрес", type: "text" },
+  year_built: { label: "Год строительства", type: "number" },
+  floors: { label: "Количество этажей", type: "number" },
+  entrances: { label: "Количество подъездов", type: "number" },
+  total_area_m2: { label: "Общая площадь", unit: "м²", type: "number" },
+  apartments: { label: "Количество квартир", type: "number" },
+  leasable_area_m2: { label: "Арендопригодная площадь", unit: "м²", type: "number" },
+  premises: { label: "Число помещений", type: "number" },
+  tenants: { label: "Число арендаторов", type: "number" },
+  opening_hours: { label: "Режим работы", type: "text" },
+  daily_visitors: { label: "Посещаемость в сутки", type: "number" },
+  hotel_rooms: { label: "Номерной фонд", type: "number" },
+  structural_scheme: { label: "Конструктивная схема", type: "scheme" },
+};
+
+/** Mirrors Building.GENERAL_FIELDS_BY_TYPE — used before the server returns the building */
+const COMMERCIAL = ["address", "year_built", "floors", "total_area_m2", "leasable_area_m2"];
+export const GENERAL_FIELDS_BY_TYPE: Record<string, string[]> = {
+  residential: ["address", "year_built", "floors", "entrances", "total_area_m2", "apartments", "structural_scheme"],
+  business_center: [...COMMERCIAL, "premises", "tenants", "opening_hours", "structural_scheme"],
+  mall: [...COMMERCIAL, "premises", "tenants", "opening_hours", "daily_visitors", "structural_scheme"],
+  hotel: ["address", "year_built", "floors", "total_area_m2", "hotel_rooms", "premises", "structural_scheme"],
+  other_commercial: [...COMMERCIAL, "premises", "tenants", "structural_scheme"],
 };
 
 export const STRUCTURAL_SCHEME: Record<string, string> = {

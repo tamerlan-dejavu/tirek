@@ -41,12 +41,12 @@ class ChecklistTemplateViewSet(
 ):
     serializer_class = ChecklistTemplateSerializer
     http_method_names = ["get", "post", "patch", "head", "options"]
-    filterset_fields = ["organization", "inspection_type", "is_active"]
+    filterset_fields = ["organization", "inspection_type", "is_active", "building_type"]
 
     def get_queryset(self):
         return ChecklistTemplate.objects.filter(
             organization_id__in=_member_org_ids(self.request.user)
-        )
+        ).order_by("name")
 
     def perform_create(self, serializer):
         _require_author(self.request.user, serializer.validated_data["organization"].pk)

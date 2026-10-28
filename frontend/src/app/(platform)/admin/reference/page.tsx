@@ -13,18 +13,21 @@ import type { Paginated } from "@/lib/api/client";
 import { api } from "@/lib/api/client";
 import { useApi } from "@/lib/api/hooks";
 import type { DefectCategory } from "@/lib/api/types";
-import { ELEMENT_GROUP, formatDate, MONTHS_SHORT } from "@/lib/status";
+import { BUILDING_TYPE, ELEMENT_GROUP, formatDate, MONTHS_SHORT } from "@/lib/status";
 
 interface ElementType {
   code: string;
   group: string;
   name: string;
   sort_order: number;
+  building_types: string[];
+  note: string;
 }
 interface Template {
   id: string;
   name: string;
   inspection_type: string;
+  building_type: string;
   is_active: boolean;
   latest_published_version: string | null;
   created_at: string;
@@ -291,6 +294,17 @@ export default function ReferencePage() {
                   },
                   { key: "name", primary: true, header: "Элемент", render: (r) => r.name },
                   {
+                    key: "types",
+                    header: "Типы зданий",
+                    hideOnMobile: true,
+                    render: (r) => (
+                      <span className="text-[13px] text-muted">
+                        {r.building_types.length ? r.building_types.map((t) => BUILDING_TYPE[t]).join(", ") : "все"}
+                        {r.note && <span className="block text-[11px] text-warning-ink">{r.note}</span>}
+                      </span>
+                    ),
+                  },
+                  {
                     key: "group",
                     header: "Группа",
                     render: (r) => (
@@ -316,6 +330,7 @@ export default function ReferencePage() {
                 rows={d.results}
                 columns={[
                   { key: "n", primary: true, header: "Шаблон", render: (t) => t.name },
+                  { key: "bt", header: "Тип здания", render: (t) => <span className="text-[13px] text-muted">{BUILDING_TYPE[t.building_type]}</span> },
                   {
                     key: "v",
                     header: "Опубликованная версия",

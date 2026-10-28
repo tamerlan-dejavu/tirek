@@ -39,6 +39,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)  # False = blocked
     is_staff = models.BooleanField(default=False)
     mfa_enabled = models.BooleanField(default=False)
+    # TOTP shared secret (RFC 6238); set at enrolment, active once a code is confirmed
+    mfa_secret = models.CharField(max_length=64, blank=True)
     preferred_language = models.CharField(max_length=8, default="ru")
     date_joined = models.DateTimeField(default=timezone.now)
 

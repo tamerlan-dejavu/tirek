@@ -54,6 +54,7 @@ class ChecklistTemplateSerializer(serializers.ModelSerializer):
             "id",
             "organization",
             "inspection_type",
+            "building_type",
             "name",
             "description",
             "is_active",

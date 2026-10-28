@@ -8,13 +8,14 @@ import { MediaUpload } from "@/components/files/MediaUpload";
 import { LifecycleStepper } from "@/components/defects/LifecycleStepper";
 import { RiskScoring, scoreOf, type Factors } from "@/components/defects/RiskScoring";
 import { WorkOrderTable } from "@/components/lists/WorkOrderList";
+import { CreateWorkOrder } from "@/components/workorders/CreateWorkOrder";
 import { ApprovalTag, RiskBadge, StatusBadge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, Field } from "@/components/ui/Card";
 import { ErrorState, QueryState, Skeleton } from "@/components/ui/States";
 import { BuildingElevation } from "@/components/viz/BuildingElevation";
 import type { Paginated } from "@/lib/api/client";
-import { useAction, useApi, useMe } from "@/lib/api/hooks";
+import { useAction, useApi, useFeatures, useMe } from "@/lib/api/hooks";
 import type { Building, Defect, RiskCategory, WorkOrder } from "@/lib/api/types";
 import { can, roles } from "@/lib/permissions";
 import {
@@ -112,6 +113,7 @@ export default function DefectPage({ params }: { params: Promise<{ id: string }>
   const [revising, setRevising] = useState(false);
   const [obs, setObs] = useState({ description: "", trend: "same" });
   const isReviewer = can.review(me);
+  const features = useFeatures();
   const isField = roles(me).has("field_specialist") || isReviewer;
 
   if (defect.isLoading) return <Skeleton className="h-40 w-full" />;
@@ -219,6 +221,7 @@ export default function DefectPage({ params }: { params: Promise<{ id: string }>
           </Card>
 
           <Card index="D" title="Мероприятия по устранению" flush>
+            {isReviewer && d.status === "confirmed" && <CreateWorkOrder defect={d} />}
             <QueryState
               query={work}
               empty={(w) => w.results.length === 0}
@@ -353,6 +356,7 @@ export default function DefectPage({ params }: { params: Promise<{ id: string }>
                   <div className="label-tech">
                     {current ? "Пересмотреть оценку" : "Подтвердить дефект и риск"}
                   </div>
+                  {features?.risk_scoring && (
                   <RiskScoring
                     value={factors}
                     onChange={setFactors}
@@ -360,6 +364,7 @@ export default function DefectPage({ params }: { params: Promise<{ id: string }>
                     chosen={riskForm.category as RiskCategory}
                     onSuggest={(c) => setRiskForm((f) => ({ ...f, category: c }))}
                   />
+                  )}
                   <div className="text-xs text-muted">Категория риска (решение инженера)</div>
                   <div
                     role="radiogroup"

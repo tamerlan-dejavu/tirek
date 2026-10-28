@@ -18,8 +18,12 @@ REST_FRAMEWORK = {  # noqa: F405
         "login": "1000/min",
         "password_reset": "1000/min",
         "sensitive": "1000/min",
+        "service_request": "1000/min",
     },
 }
 
 # Tests must not depend on the developer's local .env
 DEMO_MODE = False
+# Tests cover the optional features too; the flags themselves are tested explicitly
+FEATURE_RISK_SCORING = True
+FEATURE_POLLS = True

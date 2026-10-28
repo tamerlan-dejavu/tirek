@@ -177,6 +177,12 @@ ALLOWED_UPLOAD_MIME_TYPES = [
 # (apps/accounts/demo.py). NEVER enable on an instance with real users or data.
 DEMO_MODE = env.bool("DEMO_MODE", default=False)
 
+# Features outside ТЗ 1.1 scope, off until the customer approves them:
+#   risk scoring formula — ТЗ 5.7 requires expert assignment, «не неутверждённую формулу»;
+#   resident polls — ТЗ 3.2 excludes residents' voting from the MVP.
+FEATURE_RISK_SCORING = env.bool("FEATURE_RISK_SCORING", default=False)
+FEATURE_POLLS = env.bool("FEATURE_POLLS", default=False)
+
 vars().update(env.email_url("EMAIL_URL", default="consolemail://"))
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="Tirek <no-reply@tirek.local>")
 FRONTEND_URL = env("FRONTEND_URL", default="http://localhost:3000")
@@ -201,6 +207,7 @@ REST_FRAMEWORK = {
         "login": "10/min",
         "password_reset": "5/hour",
         "sensitive": "30/min",
+        "service_request": "20/hour",  # submissions per user: spam protection (ТЗ 9.8)
     },
 }
 

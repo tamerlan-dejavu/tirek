@@ -8,7 +8,7 @@ import { ButtonLink } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Empty, QueryState } from "@/components/ui/States";
 import type { Paginated } from "@/lib/api/client";
-import { useApi, useMe } from "@/lib/api/hooks";
+import { useApi, useFeatures, useMe } from "@/lib/api/hooks";
 import type { Poll, ServiceRequest, WorkOrderStatus } from "@/lib/api/types";
 import { formatDate, REQUEST_STATUS, WORK_ORDER_STATUS } from "@/lib/status";
 
@@ -24,7 +24,8 @@ export default function ResidentHome() {
   const { data: me } = useMe();
   const overview = useApi<Overview[]>("resident/overview/");
   const requests = useApi<Paginated<ServiceRequest>>("service-requests/?ordering=-created_at");
-  const polls = useApi<Paginated<Poll>>("polls/");
+  const features = useFeatures();
+  const polls = useApi<Paginated<Poll>>(features?.polls ? "polls/" : null);
   const home = overview.data?.[0];
   const pendingPolls = polls.data?.results.filter((p) => p.my_vote === null) ?? [];
 
