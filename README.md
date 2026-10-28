@@ -114,6 +114,9 @@ tirek/
 | `make makemigrations` | новые миграции |
 | `make schema` | OpenAPI → типы для frontend (`src/lib/api/schema.d.ts`) |
 
+Двухфакторная защита (TOTP) включается каждым пользователем в «Настройках»; журнал аудита — «Управление → Журнал аудита».
+Расчёт риска по формуле и опросы жителей включаются переменными `FEATURE_RISK_SCORING` / `FEATURE_POLLS`.
+
 Локально без Docker (backend): `cd backend && python -m venv .venv && .venv/Scripts/pip install -e ".[dev]" && pytest` — тесты используют SQLite и in-memory хранилище.
 
 ## Развёртывание

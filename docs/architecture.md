@@ -35,6 +35,18 @@
 | M11 PDF | `reports` | `snapshot.py`, `tasks.py`, `templates/reports/inspection_report.html` |
 | M12 Журнал и аналитика | `audit`, `analytics` | `audit.services.log`, `analytics.views.dashboard` |
 
+### Тип здания (ТЗ ред. 1.1)
+
+`Building.building_type`: жилой дом, бизнес-центр, ТЦ/ТРЦ, гостиница, иное коммерческое. Тип определяет
+поля «Общих сведений» паспорта (`GENERAL_FIELDS_BY_TYPE`), классификатор (`ElementType.building_types`,
+коммерческие элементы — предварительный перечень «на согласовании») и шаблоны чек-листов
+(`ChecklistTemplate.building_type`): обследование по шаблону другого типа отклоняется (AC-22).
+
+### Необязательные функции
+
+`FEATURE_RISK_SCORING` (расчёт риска по формуле, ТЗ 5.7 требует экспертного присвоения) и `FEATURE_POLLS`
+(опросы жителей, ТЗ 3.2) по умолчанию выключены; `GET /api/v1/features/` сообщает интерфейсу, что включено.
+
 ## 3. Модель доступа (ТЗ 4.3, 9.2)
 
 Решение никогда не принимается только по роли. Цепочка проверки в `apps/core/access.py`:
