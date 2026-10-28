@@ -48,7 +48,7 @@ export const PROVIDER_NAV: NavGroup[] = [
     items: [
       { href: "/dashboard", label: "Обзор", icon: LayoutGrid, code: "01" },
       { href: "/requests", label: "Заявки", icon: Inbox, code: "02" },
-      { href: "/buildings", label: "Дома", icon: Building2, code: "03" },
+      { href: "/buildings", label: "Здания", icon: Building2, code: "03" },
       { href: "/inspections", label: "Обследования", icon: ClipboardCheck, code: "04", visible: can.inspect },
       { href: "/defects", label: "Дефекты", icon: TriangleAlert, code: "05" },
       { href: "/work-orders", label: "Обслуживание", icon: Wrench, code: "06" },
@@ -74,9 +74,9 @@ export const PROVIDER_NAV: NavGroup[] = [
 
 export const OSI_NAV: NavGroup[] = [
   {
-    title: "Кабинет ОСИ",
+    title: "Кабинет заказчика",
     items: [
-      { href: "/osi", label: "Мои дома", icon: Building2, code: "01" },
+      { href: "/osi", label: "Мои здания", icon: Building2, code: "01" },
       { href: "/requests", label: "Заявки жителей", icon: Inbox, code: "02" },
       { href: "/settings", label: "Настройки", icon: Settings2, code: "03" },
     ],
@@ -101,7 +101,7 @@ export const ROLE_LABEL: Record<string, string> = {
   reviewing_engineer: "Инженер",
   production_planner: "ПТО",
   dispatcher: "Диспетчер",
-  osi_representative: "Представитель ОСИ",
+  osi_representative: "Представитель заказчика",
   resident: "Житель",
 };
 

@@ -8,6 +8,7 @@ import { MediaUpload } from "@/components/files/MediaUpload";
 import { LifecycleStepper } from "@/components/defects/LifecycleStepper";
 import { RiskScoring, scoreOf, type Factors } from "@/components/defects/RiskScoring";
 import { WorkOrderTable } from "@/components/lists/WorkOrderList";
+import { CreateWorkOrder } from "@/components/workorders/CreateWorkOrder";
 import { ApprovalTag, RiskBadge, StatusBadge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, Field } from "@/components/ui/Card";
@@ -219,6 +220,7 @@ export default function DefectPage({ params }: { params: Promise<{ id: string }>
           </Card>
 
           <Card index="D" title="Мероприятия по устранению" flush>
+            {isReviewer && d.status === "confirmed" && <CreateWorkOrder defect={d} />}
             <QueryState
               query={work}
               empty={(w) => w.results.length === 0}
