@@ -166,14 +166,14 @@
 /* Construction grid — nearly invisible; kept only where it supports drawings */
 @utility grid-blueprint {
   background-image:
-    linear-gradient(to right, rgb(255 255 255 / 0.025) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(255 255 255 / 0.025) 1px, transparent 1px);
+    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
   background-size: 32px 32px;
 }
 @utility grid-blueprint-light {
   background-image:
-    linear-gradient(to right, rgb(255 255 255 / 0.02) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(255 255 255 / 0.02) 1px, transparent 1px);
+    linear-gradient(to right, var(--grid-line-soft) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line-soft) 1px, transparent 1px);
   background-size: 24px 24px;
 }
 
@@ -207,4 +207,83 @@
 }
 .no-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+/*
+ * THEMES. Graphite (above) is the default; the light theme follows ТЗ 11.3 — the working platform
+ * on light neutral surfaces. The theme is set on <html data-theme> before the first paint
+ * (see app/layout.tsx). A subtree with data-theme="dark" stays dark whatever the choice:
+ * the public landing (ТЗ 11.3: «публичная часть — глубокие тёмные поверхности»).
+ */
+:root {
+  --grid-line: rgb(255 255 255 / 0.025);
+  --grid-line-soft: rgb(255 255 255 / 0.02);
+}
+[data-theme="light"] {
+  /* Surfaces: light neutral, depth from 1px borders */
+  --color-base: #f5f6f8;
+  --color-base-2: #eceef2;
+  --color-canvas: #f5f6f8;
+  --color-surface: #ffffff;
+  --color-mist: #eef0f3;
+  --color-line: #e1e4e9;
+  --color-line-strong: #c9ced6;
+  /* Text — contrast on white: ink 18:1, muted 7.3:1, faint 4.8:1 (WCAG AA) */
+  --color-ink: #111318;
+  --color-muted: #50555f;
+  --color-faint: #6b7280;
+  /* Accent — 5.2:1 for links on white */
+  --color-accent: #2563eb;
+  --color-accent-strong: #1d4ed8;
+  --color-accent-hover: #1e40af;
+  --color-accent-soft: rgb(37 99 235 / 0.08);
+  --color-steel: #6b7280;
+  --color-steel-2: #c3c8d0;
+  /* Semantic text darkened for white backgrounds; fills (R1–R4, markers) stay the same */
+  --color-critical-ink: #b91c1c;
+  --color-critical-soft: rgb(239 68 68 / 0.1);
+  --color-warning-ink: #a14f05;
+  --color-warning-soft: rgb(245 158 11 / 0.12);
+  --color-healthy-ink: #047857;
+  --color-healthy-soft: rgb(16 185 129 / 0.1);
+  --color-info-ink: #0369a1;
+  --color-info-soft: rgb(56 189 248 / 0.12);
+  --color-unknown-ink: #475569;
+  --color-unknown-soft: rgb(148 163 184 / 0.14);
+  --shadow-overlay: 0 16px 40px -12px rgb(16 24 40 / 0.18), 0 0 0 1px var(--color-line);
+  --grid-line: rgb(15 23 42 / 0.05);
+  --grid-line-soft: rgb(15 23 42 / 0.04);
+  color-scheme: light;
+}
+[data-theme="dark"] {
+  --color-base: #0c0d10;
+  --color-base-2: #111317;
+  --color-canvas: #0c0d10;
+  --color-surface: #16181d;
+  --color-mist: #1d2026;
+  --color-line: #292c33;
+  --color-line-strong: #3a3e47;
+  --color-ink: #f5f5f7;
+  --color-muted: #969ba6;
+  --color-faint: #6b7280;
+  --color-accent: #3b82f6;
+  --color-accent-strong: #3b82f6;
+  --color-accent-hover: #2563eb;
+  --color-accent-soft: rgb(59 130 246 / 0.12);
+  --color-steel: #8b93a1;
+  --color-steel-2: #4b5260;
+  --color-critical-ink: #f87171;
+  --color-critical-soft: rgb(239 68 68 / 0.12);
+  --color-warning-ink: #fbbf24;
+  --color-warning-soft: rgb(245 158 11 / 0.12);
+  --color-healthy-ink: #34d399;
+  --color-healthy-soft: rgb(16 185 129 / 0.12);
+  --color-info-ink: #7dd3fc;
+  --color-info-soft: rgb(56 189 248 / 0.12);
+  --color-unknown-ink: #cbd5e1;
+  --color-unknown-soft: rgb(148 163 184 / 0.12);
+  --shadow-overlay: 0 16px 40px -12px rgb(0 0 0 / 0.6), 0 0 0 1px var(--color-line);
+  --grid-line: rgb(255 255 255 / 0.025);
+  --grid-line-soft: rgb(255 255 255 / 0.02);
+  color-scheme: dark;
 }

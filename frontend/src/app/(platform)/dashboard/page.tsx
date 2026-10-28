@@ -36,7 +36,7 @@ export default function DashboardPage() {
         subtitle={
           s ? (
             <>
-              {s.buildings} {s.buildings === 1 ? "дом" : "домов"} в обслуживании · данные на{" "}
+              {s.buildings} {s.buildings % 10 === 1 && s.buildings % 100 !== 11 ? "здание" : [2, 3, 4].includes(s.buildings % 10) && ![12, 13, 14].includes(s.buildings % 100) ? "здания" : "зданий"} в обслуживании · данные на{" "}
               <span className="font-mono">{formatDateTime(s.generated_at)}</span>
             </>
           ) : (
@@ -52,7 +52,7 @@ export default function DashboardPage() {
 
       {/* Metrics — plain counts with definitions, no composite scores */}
       <section aria-label="Ключевые показатели" className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-        <Stat label="Дома" value={s?.buildings ?? "—"} icon={<Building2 className="size-4" />} definition="С действующим договором технического сопровождения" href="/buildings" />
+        <Stat label="Здания" value={s?.buildings ?? "—"} icon={<Building2 className="size-4" />} definition="С действующим договором технического сопровождения" href="/buildings" />
         <Stat label="Открытые дефекты" value={s?.defects_open ?? "—"} icon={<TriangleAlert className="size-4" />} definition="Все статусы, кроме «Закрыт» и «Отклонён»" href="/defects" />
         <Stat label="Критические R1" value={s?.defects_r1 ?? "—"} tone="critical" icon={<OctagonAlert className="size-4" />} definition="Открытые, категория R1 утверждена инженером" href="/defects" />
         <Stat label="Просрочено работ" value={s?.work_orders_overdue ?? "—"} tone="critical" icon={<Wrench className="size-4" />} definition="Плановая дата прошла, работа не выполнена" href="/work-orders" />
