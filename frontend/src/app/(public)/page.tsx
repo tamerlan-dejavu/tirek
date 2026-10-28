@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { Logo } from "@/components/brand/Logo";
 import { HeroBuilding } from "@/components/landing/HeroBuilding";
 import { PlatformPreview } from "@/components/landing/PlatformPreview";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { buttonClass } from "@/components/ui/Button";
 
 export const metadata = {
@@ -123,8 +124,7 @@ const MONTHS = ["янв", "фев", "мар", "апр", "май", "июн", "и�
 
 export default function LandingPage() {
   return (
-    // Public part: deep dark surfaces regardless of the chosen theme (ТЗ 11.3)
-    <div data-theme="dark" className="bg-base text-ink">
+    <div className="bg-base text-ink">
       {/* A. HERO */}
       <header className="relative overflow-hidden bg-base text-ink">
         {/* barely perceptible depth on the first screen */}
@@ -140,9 +140,12 @@ export default function LandingPage() {
             <a href="#customer" className="hover:text-ink">Для заказчика</a>
             <a href="#reports" className="hover:text-ink">Отчёты</a>
           </div>
-          <Link href="/login" className={buttonClass("inverse-outline", "sm")}>
-            Вход
-          </Link>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <Link href="/login" className={buttonClass("inverse-outline", "sm")}>
+              Вход
+            </Link>
+          </div>
         </nav>
 
         <div className="relative mx-auto grid max-w-[1240px] items-center gap-12 px-5 pt-12 pb-20 md:px-8 lg:grid-cols-[1fr_1.05fr] lg:pt-20 lg:pb-32">

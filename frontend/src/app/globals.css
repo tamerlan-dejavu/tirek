@@ -212,8 +212,8 @@
 /*
  * THEMES. Graphite (above) is the default; the light theme follows ТЗ 11.3 — the working platform
  * on light neutral surfaces. The theme is set on <html data-theme> before the first paint
- * (see app/layout.tsx). A subtree with data-theme="dark" stays dark whatever the choice:
- * the public landing (ТЗ 11.3: «публичная часть — глубокие тёмные поверхности»).
+ * (see app/layout.tsx); the public landing follows the same choice. A subtree with
+ * data-theme="dark" would stay dark whatever the choice.
  */
 :root {
   --grid-line: rgb(255 255 255 / 0.025);
