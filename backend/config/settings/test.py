@@ -23,3 +23,6 @@ REST_FRAMEWORK = {  # noqa: F405
 
 # Tests must not depend on the developer's local .env
 DEMO_MODE = False
+# Tests cover the optional features too; the flags themselves are tested explicitly
+FEATURE_RISK_SCORING = True
+FEATURE_POLLS = True
