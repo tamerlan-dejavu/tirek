@@ -50,7 +50,7 @@ export function ThemeCard() {
           </button>
         ))}
       </div>
-      <p className="mt-3 text-xs text-muted">Выбор хранится в этом браузере. Публичная страница сайта всегда тёмная.</p>
+      <p className="mt-3 text-xs text-muted">Выбор хранится в этом браузере и действует на всём сайте.</p>
     </Card>
   );
 }
