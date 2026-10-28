@@ -123,7 +123,8 @@ const MONTHS = ["янв", "фев", "мар", "апр", "май", "июн", "и�
 
 export default function LandingPage() {
   return (
-    <div className="bg-base">
+    // Public part: deep dark surfaces regardless of the chosen theme (ТЗ 11.3)
+    <div data-theme="dark" className="bg-base text-ink">
       {/* A. HERO */}
       <header className="relative overflow-hidden bg-base text-ink">
         {/* barely perceptible depth on the first screen */}
