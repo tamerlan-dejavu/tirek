@@ -33,6 +33,7 @@ const SEGMENT_LABEL: Record<string, string> = {
   requests: "Заявки",
   resident: "Мой дом",
   polls: "Опросы",
+  audit: "Журнал аудита",
   reference: "Справочники",
 };
 

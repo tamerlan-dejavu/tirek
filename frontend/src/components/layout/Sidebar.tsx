@@ -13,18 +13,19 @@ import {
   Inbox,
   LayoutGrid,
   MessageSquarePlus,
+  ScrollText,
   Settings2,
   TriangleAlert,
+  type LucideIcon,
   Users,
   Vote,
   Wrench,
-  type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { Logo } from "@/components/brand/Logo";
-import { useMe } from "@/lib/api/hooks";
+import { useFeatures, useMe } from "@/lib/api/hooks";
 import type { Me } from "@/lib/api/types";
 import { can } from "@/lib/permissions";
 
@@ -34,6 +35,8 @@ export interface NavItem {
   icon: LucideIcon;
   code: string;
   visible?: (me?: Me) => boolean;
+  /** Shown only when this optional feature is enabled on the server */
+  feature?: "polls" | "risk_scoring";
 }
 
 export interface NavGroup {
@@ -67,7 +70,8 @@ export const PROVIDER_NAV: NavGroup[] = [
     items: [
       { href: "/admin/organizations", label: "Организации и роли", icon: Users, code: "10", visible: can.manageOrganizations },
       { href: "/admin/reference", label: "Справочники", icon: BookOpen, code: "11", visible: can.manageOrganizations },
-      { href: "/settings", label: "Настройки", icon: Settings2, code: "12" },
+      { href: "/admin/audit", label: "Журнал аудита", icon: ScrollText, code: "12", visible: can.manageOrganizations },
+      { href: "/settings", label: "Настройки", icon: Settings2, code: "13" },
     ],
   },
 ];
@@ -89,7 +93,7 @@ export const RESIDENT_NAV: NavGroup[] = [
     items: [
       { href: "/resident", label: "Главная", icon: House, code: "01" },
       { href: "/resident/new", label: "Сообщить о проблеме", icon: MessageSquarePlus, code: "02" },
-      { href: "/resident/polls", label: "Опросы", icon: Vote, code: "03" },
+      { href: "/resident/polls", label: "Опросы", icon: Vote, code: "03", feature: "polls" },
       { href: "/settings", label: "Уведомления и профиль", icon: Bell, code: "04" },
     ],
   },
@@ -108,6 +112,7 @@ export const ROLE_LABEL: Record<string, string> = {
 export function Sidebar({ groups, onNavigate }: { groups: NavGroup[]; onNavigate?: () => void }) {
   const pathname = usePathname();
   const { data: me } = useMe();
+  const features = useFeatures();
   const membership = me?.memberships[0];
 
   return (
@@ -120,7 +125,7 @@ export function Sidebar({ groups, onNavigate }: { groups: NavGroup[]; onNavigate
 
       <nav aria-label="Основная навигация" className="flex-1 overflow-y-auto px-3 py-4">
         {groups.map((group) => {
-          const items = group.items.filter((i) => !i.visible || i.visible(me));
+          const items = group.items.filter((i) => (!i.visible || i.visible(me)) && (!i.feature || features?.[i.feature]));
           if (!items.length) return null;
           return (
             <div key={group.title} className="mb-5">

@@ -13,6 +13,11 @@ export function useApi<T>(path: string | null, key?: QueryKey) {
   });
 }
 
+/** Optional features of this installation (ТЗ: off until the customer approves them). */
+export function useFeatures() {
+  return useApi<{ risk_scoring: boolean; polls: boolean }>("features/", ["features"]).data;
+}
+
 export function useMe() {
   return useApi<Me>("auth/me/", ["me"]);
 }
