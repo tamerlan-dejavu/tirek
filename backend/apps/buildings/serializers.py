@@ -13,6 +13,8 @@ from .models import (
 
 class BuildingSerializer(serializers.ModelSerializer):
     completeness = serializers.IntegerField(read_only=True)
+    building_type_label = serializers.CharField(source="get_building_type_display", read_only=True)
+    general_fields = serializers.ListField(child=serializers.CharField(), read_only=True)
     # Required on create: the provider organization that will service the building
     provider_organization = serializers.PrimaryKeyRelatedField(
         queryset=Organization.objects.filter(type=OrganizationType.PROVIDER, is_active=True),
@@ -24,6 +26,9 @@ class BuildingSerializer(serializers.ModelSerializer):
         model = Building
         fields = [
             "id",
+            "building_type",
+            "building_type_label",
+            "general_fields",
             "internal_code",
             "name",
             "address",
@@ -34,6 +39,12 @@ class BuildingSerializer(serializers.ModelSerializer):
             "apartments",
             "total_area_m2",
             "structural_scheme",
+            "leasable_area_m2",
+            "premises",
+            "tenants",
+            "opening_hours",
+            "daily_visitors",
+            "hotel_rooms",
             "management_organization",
             "main_photo",
             "cadastral_number",
@@ -72,7 +83,7 @@ class BuildingHistorySerializer(serializers.Serializer):
 class ElementTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = ElementType
-        fields = ["code", "group", "name", "sort_order"]
+        fields = ["code", "group", "name", "sort_order", "building_types", "note"]
 
 
 class BuildingElementSerializer(serializers.ModelSerializer):

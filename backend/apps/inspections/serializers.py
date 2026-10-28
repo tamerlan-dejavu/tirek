@@ -75,6 +75,13 @@ class InspectionSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     {"template_version": "Версию чек-листа нельзя сменить после создания."}
                 )
+        building = attrs.get("building") or getattr(self.instance, "building", None)
+        version = attrs.get("template_version")
+        if building and version and version.template.building_type != building.building_type:
+            # ТЗ 5.5, AC-22: a building is inspected only with templates of its own type
+            raise serializers.ValidationError(
+                {"template_version": "Шаблон предназначен для другого типа здания."}
+            )
         return attrs
 
 

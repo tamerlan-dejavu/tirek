@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.db import models
 
+from apps.buildings.models import BuildingType
 from apps.core.models import UUIDModel
 
 
@@ -24,6 +25,13 @@ class ChecklistTemplate(UUIDModel):
     )
     inspection_type = models.CharField(
         max_length=32, choices=InspectionType.choices, default=InspectionType.VISUAL_REGULAR
+    )
+    # Templates of residential and commercial buildings are never mixed (ТЗ 5.5)
+    building_type = models.CharField(
+        max_length=20,
+        choices=BuildingType.choices,
+        default=BuildingType.RESIDENTIAL,
+        db_index=True,
     )
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)

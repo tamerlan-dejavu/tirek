@@ -15,12 +15,37 @@ class StructuralScheme(models.TextChoices):
     MIXED = "mixed", "Смешанная"
 
 
+class BuildingType(models.TextChoices):
+    """ТЗ 5.3: the type defines passport fields, the element classifier and checklist templates."""
+
+    RESIDENTIAL = "residential", "Многоквартирный жилой дом"
+    BUSINESS_CENTER = "business_center", "Бизнес-центр"
+    MALL = "mall", "Торговый центр / ТРЦ"
+    HOTEL = "hotel", "Гостиница"
+    OTHER_COMMERCIAL = "other_commercial", "Иное коммерческое здание"
+
+
+COMMERCIAL_TYPES = [
+    BuildingType.BUSINESS_CENTER,
+    BuildingType.MALL,
+    BuildingType.HOTEL,
+    BuildingType.OTHER_COMMERCIAL,
+]
+
+
 class Building(UUIDModel):
     """
     Digital passport (ТЗ 5.3). Null means «неизвестно» — invented technical values
     are not allowed, so numeric fields are nullable on purpose.
     """
 
+    building_type = models.CharField(
+        "Тип здания",
+        max_length=20,
+        choices=BuildingType.choices,
+        default=BuildingType.RESIDENTIAL,
+        db_index=True,
+    )
     internal_code = models.CharField("Внутренний идентификатор", max_length=32, unique=True)
     name = models.CharField(max_length=255, blank=True)
     address = models.CharField(max_length=512, db_index=True)
@@ -30,6 +55,15 @@ class Building(UUIDModel):
     entrances = models.PositiveSmallIntegerField(null=True, blank=True)
     apartments = models.PositiveIntegerField(null=True, blank=True)
     total_area_m2 = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    # Commercial buildings (ТЗ 5.3, preliminary list — refined with engineers)
+    leasable_area_m2 = models.DecimalField(
+        "Арендопригодная площадь", max_digits=10, decimal_places=2, null=True, blank=True
+    )
+    premises = models.PositiveIntegerField("Число помещений", null=True, blank=True)
+    tenants = models.PositiveIntegerField("Число арендаторов", null=True, blank=True)
+    opening_hours = models.CharField("Режим работы", max_length=128, blank=True)
+    daily_visitors = models.PositiveIntegerField("Посещаемость в сутки", null=True, blank=True)
+    hotel_rooms = models.PositiveIntegerField("Номерной фонд", null=True, blank=True)
     structural_scheme = models.CharField(
         max_length=16, choices=StructuralScheme.choices, default=StructuralScheme.UNKNOWN
     )
@@ -54,6 +88,7 @@ class Building(UUIDModel):
     history = HistoricalRecords(excluded_fields=["updated_at"])
 
     PASSPORT_FIELDS = [
+        "building_type",
         "address",
         "name",
         "year_built",
@@ -63,6 +98,12 @@ class Building(UUIDModel):
         "total_area_m2",
         "structural_scheme",
         "management_organization",
+        "leasable_area_m2",
+        "premises",
+        "tenants",
+        "opening_hours",
+        "daily_visitors",
+        "hotel_rooms",
     ]
 
     class Meta:
@@ -71,16 +112,52 @@ class Building(UUIDModel):
     def __str__(self):
         return self.name or self.address
 
-    # «Общие сведения» of the digital passport, in the order of the passport structure
-    GENERAL_FIELDS = [
-        "address",
-        "year_built",
-        "floors",
-        "entrances",
-        "total_area_m2",
-        "apartments",
-        "structural_scheme",
-    ]
+    # «Общие сведения» of the digital passport by building type, in passport order
+    _COMMERCIAL = ["address", "year_built", "floors", "total_area_m2", "leasable_area_m2"]
+    GENERAL_FIELDS_BY_TYPE = {
+        BuildingType.RESIDENTIAL: [
+            "address",
+            "year_built",
+            "floors",
+            "entrances",
+            "total_area_m2",
+            "apartments",
+            "structural_scheme",
+        ],
+        BuildingType.BUSINESS_CENTER: [
+            *_COMMERCIAL,
+            "premises",
+            "tenants",
+            "opening_hours",
+            "structural_scheme",
+        ],
+        BuildingType.MALL: [
+            *_COMMERCIAL,
+            "premises",
+            "tenants",
+            "opening_hours",
+            "daily_visitors",
+            "structural_scheme",
+        ],
+        BuildingType.HOTEL: [
+            "address",
+            "year_built",
+            "floors",
+            "total_area_m2",
+            "hotel_rooms",
+            "premises",
+            "structural_scheme",
+        ],
+        BuildingType.OTHER_COMMERCIAL: [*_COMMERCIAL, "premises", "tenants", "structural_scheme"],
+    }
+
+    @property
+    def general_fields(self) -> list[str]:
+        return self.GENERAL_FIELDS_BY_TYPE[self.building_type]
+
+    @property
+    def is_commercial(self) -> bool:
+        return self.building_type in COMMERCIAL_TYPES
 
     @property
     def completeness(self) -> int:
@@ -90,11 +167,16 @@ class Building(UUIDModel):
         """
         known = sum(
             1
-            for f in self.GENERAL_FIELDS
+            for f in self.general_fields
             if getattr(self, f) not in (None, "", StructuralScheme.UNKNOWN)
         )
-        total = len(self.GENERAL_FIELDS)
-        entries = list(self.passport_entries.values_list("presence", flat=True))
+        total = len(self.general_fields)
+        applicable = ElementType.codes_for(self.building_type)
+        entries = list(
+            self.passport_entries.filter(element_type__in=applicable).values_list(
+                "presence", flat=True
+            )
+        )
         known += sum(1 for p in entries if p != Presence.UNKNOWN)
         total += len(entries)
         return round(100 * known / total)
@@ -115,12 +197,24 @@ class ElementType(models.Model):
     name = models.CharField(max_length=255)
     sort_order = models.PositiveSmallIntegerField(default=0)
     is_active = models.BooleanField(default=True)
+    # Building types the element applies to (ТЗ 5.4); empty = every type
+    building_types = models.JSONField(default=list, blank=True)
+    note = models.CharField(max_length=255, blank=True)
 
     class Meta:
         ordering = ["group", "sort_order"]
 
     def __str__(self):
         return self.name
+
+    def applies_to(self, building_type: str) -> bool:
+        return not self.building_types or building_type in self.building_types
+
+    @classmethod
+    def codes_for(cls, building_type: str) -> list[str]:
+        """Active classifier codes for a building type (filtered in Python: JSON lookups
+        differ between PostgreSQL and SQLite, and the classifier is a few dozen rows)."""
+        return [t.code for t in cls.objects.filter(is_active=True) if t.applies_to(building_type)]
 
 
 class BuildingElement(UUIDModel):
@@ -162,7 +256,7 @@ class BuildingElement(UUIDModel):
 
 class Presence(models.TextChoices):
     PRESENT = "present", "Есть"
-    ABSENT = "absent", "Нет в доме"
+    ABSENT = "absent", "Нет в здании"
     UNKNOWN = "unknown", "Неизвестно"
 
 
