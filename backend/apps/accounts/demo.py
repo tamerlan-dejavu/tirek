@@ -7,6 +7,9 @@ is true. The accounts themselves are created by `manage.py seed_demo`.
 
 from dataclasses import asdict, dataclass
 
+# Shown only while resident polls are enabled (settings.FEATURE_POLLS)
+POLLS_ABILITY = "Опросы жителей"
+
 
 @dataclass(frozen=True)
 class DemoAccount:
@@ -32,7 +35,7 @@ DEMO_ACCOUNTS: tuple[DemoAccount, ...] = (
             "Фото и видео проблемы",
             "Статус заявки",
             "Уведомления",
-            "Опросы жителей",
+            POLLS_ABILITY,
             "Планируемые работы",
         ),
         home="/resident",
