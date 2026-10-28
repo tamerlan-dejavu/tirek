@@ -5,6 +5,7 @@ from rest_framework import mixins, viewsets
 from rest_framework.decorators import action, api_view
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 
 from apps.accounts.models import User
 from apps.buildings.models import Building
@@ -85,6 +86,12 @@ class ServiceRequestViewSet(
         qs = ServiceRequest.objects.select_related("building", "author", "assignee", "defect")
         # Staff and ОСИ: requests of their buildings. Residents: only their own.
         return qs.filter(Q(building__in=access.accessible_building_ids(user)) | Q(author=user))
+
+    throttle_scope = "service_request"
+
+    def get_throttles(self):
+        # Only submitting is limited; reading and processing requests are not
+        return [ScopedRateThrottle()] if self.action == "create" else super().get_throttles()
 
     def perform_create(self, serializer):
         user = self.request.user

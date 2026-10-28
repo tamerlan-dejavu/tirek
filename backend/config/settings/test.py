@@ -18,6 +18,7 @@ REST_FRAMEWORK = {  # noqa: F405
         "login": "1000/min",
         "password_reset": "1000/min",
         "sensitive": "1000/min",
+        "service_request": "1000/min",
     },
 }
 

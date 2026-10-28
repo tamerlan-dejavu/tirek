@@ -9,6 +9,12 @@ from .models import User, UserSession
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True, trim_whitespace=False)
+    # One-time code, required only when the user has the second factor enabled
+    otp = serializers.CharField(required=False, allow_blank=True, default="")
+
+
+class OtpSerializer(serializers.Serializer):
+    code = serializers.CharField()
 
 
 class MembershipBriefSerializer(serializers.ModelSerializer):

@@ -207,6 +207,7 @@ REST_FRAMEWORK = {
         "login": "10/min",
         "password_reset": "5/hour",
         "sensitive": "30/min",
+        "service_request": "20/hour",  # submissions per user: spam protection (ТЗ 9.8)
     },
 }
 
