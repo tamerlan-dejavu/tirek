@@ -100,9 +100,12 @@ def demo_accounts(request):
     if not settings.DEMO_MODE:
         return Response({"enabled": False, "accounts": []})
     existing = set(User.objects.filter(is_active=True).values_list("email", flat=True))
-    return Response(
-        {"enabled": True, "accounts": [a for a in demo.public_list() if a["email"] in existing]}
-    )
+    accounts = [a for a in demo.public_list() if a["email"] in existing]
+    if not settings.FEATURE_POLLS:
+        # Do not advertise a feature that is switched off
+        for a in accounts:
+            a["abilities"] = [x for x in a["abilities"] if x != demo.POLLS_ABILITY]
+    return Response({"enabled": True, "accounts": accounts})
 
 
 @anonymous_csrf

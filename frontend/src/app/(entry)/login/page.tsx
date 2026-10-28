@@ -8,6 +8,7 @@ import { Suspense, useState, type FormEvent } from "react";
 import { AuthFrame } from "@/components/auth/AuthFrame";
 import { RolePicker } from "@/components/auth/RolePicker";
 import { Logo } from "@/components/brand/Logo";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { Field } from "@/components/forms/Field";
 import { Button } from "@/components/ui/Button";
 import { Loading } from "@/components/ui/States";
@@ -115,9 +116,12 @@ function DemoEntry({ accounts }: { accounts: DemoAccount[] }) {
           <Link href="/" aria-label="Tirek — главная">
             <Logo />
           </Link>
-          <span className="rounded-md border border-line px-2.5 py-1 font-mono text-[11px] text-muted uppercase">
-            Демо-стенд
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="rounded-md border border-line px-2.5 py-1 font-mono text-[11px] text-muted uppercase">
+              Демо-стенд
+            </span>
+            <ThemeToggle />
+          </div>
         </div>
       </header>
       <main className="mx-auto max-w-[1240px] px-5 py-12 md:px-8 md:py-16">

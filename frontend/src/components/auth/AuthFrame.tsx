@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { Logo } from "@/components/brand/Logo";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 
 /** Split entry frame: brand panel on the left, the form on the right. */
 export function AuthFrame({ children }: { children: ReactNode }) {
@@ -36,7 +37,10 @@ export function AuthFrame({ children }: { children: ReactNode }) {
           </div>
         </div>
       </aside>
-      <main className="flex items-center justify-center bg-canvas px-5 py-12">
+      <main className="relative flex items-center justify-center bg-canvas px-5 py-12">
+        <div className="absolute top-4 right-4">
+          <ThemeToggle />
+        </div>
         <div className="w-full max-w-sm">
           <div className="mb-10 lg:hidden">
             <Logo />
