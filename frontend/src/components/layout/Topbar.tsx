@@ -14,7 +14,7 @@ import { ROLE_LABEL } from "./Sidebar";
 
 const SEGMENT_LABEL: Record<string, string> = {
   dashboard: "Обзор",
-  buildings: "Дома",
+  buildings: "Здания",
   inspections: "Обследования",
   defects: "Дефекты",
   "work-orders": "Обслуживание",
@@ -24,7 +24,7 @@ const SEGMENT_LABEL: Record<string, string> = {
   admin: "Управление",
   organizations: "Организации и роли",
   settings: "Настройки",
-  osi: "Кабинет ОСИ",
+  osi: "Кабинет заказчика",
   passport: "Паспорт",
   elements: "Элементы и системы",
   history: "История",
@@ -33,6 +33,7 @@ const SEGMENT_LABEL: Record<string, string> = {
   requests: "Заявки",
   resident: "Мой дом",
   polls: "Опросы",
+  audit: "Журнал аудита",
   reference: "Справочники",
 };
 

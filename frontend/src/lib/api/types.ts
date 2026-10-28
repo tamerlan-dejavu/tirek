@@ -27,11 +27,24 @@ export interface Me {
   email: string;
   full_name: string;
   position: string;
+  mfa_enabled: boolean;
   memberships: Membership[];
 }
 
+export type BuildingType = "residential" | "business_center" | "mall" | "hotel" | "other_commercial";
+
 export interface Building {
   id: UUID;
+  building_type: BuildingType;
+  building_type_label: string;
+  /** «Общие сведения» of this type of building, in passport order (from the server) */
+  general_fields: string[];
+  leasable_area_m2: string | null;
+  premises: number | null;
+  tenants: number | null;
+  opening_hours: string;
+  daily_visitors: number | null;
+  hotel_rooms: number | null;
   internal_code: string;
   name: string;
   address: string;

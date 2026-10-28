@@ -14,11 +14,12 @@ from rest_framework.views import APIView
 from apps.audit.models import AuditAction
 from apps.audit.services import log
 
-from . import demo, services
+from . import demo, mfa, services
 from .models import OneTimeToken, User, UserSession
 from .serializers import (
     LoginSerializer,
     MeSerializer,
+    OtpSerializer,
     PasswordResetRequestSerializer,
     SetPasswordSerializer,
     UserSessionSerializer,
@@ -60,6 +61,23 @@ class LoginView(APIView):
             )
 
         user = authenticate(request, email=email, password=data.validated_data["password"])
+        if user is not None and user.mfa_enabled:
+            otp = data.validated_data["otp"]
+            if not otp:
+                # Password is right; the second factor is still missing — not a failed attempt
+                return Response(
+                    {"error": {"code": "mfa_required", "detail": "Введите код из приложения."}},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if not mfa.verify(user.mfa_secret, otp):
+                services.record_attempt(email, ip, succeeded=False)
+                log(
+                    AuditAction.LOGIN_FAILED, request=request, changes={"email": email, "mfa": True}
+                )
+                return Response(
+                    {"error": {"code": "invalid_otp", "detail": "Неверный код из приложения."}},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
         services.record_attempt(email, ip, succeeded=user is not None)
         if user is None:
             log(AuditAction.LOGIN_FAILED, request=request, changes={"email": email})
@@ -188,3 +206,51 @@ def revoke_other_sessions(request):
         request.user, request=request, except_key=request.session.session_key
     )
     return Response({"revoked": count})
+
+
+class MfaSetupView(APIView):
+    """Start enrolment: a new secret and a QR code for the authenticator app (not active yet)."""
+
+    def post(self, request):
+        user = request.user
+        if user.mfa_enabled:
+            raise ValidationError("Двухфакторная защита уже включена.")
+        user.mfa_secret = mfa.new_secret()
+        user.save(update_fields=["mfa_secret"])
+        uri = mfa.provisioning_uri(user.email, user.mfa_secret)
+        return Response({"secret": user.mfa_secret, "uri": uri, "qr_svg": mfa.qr_svg(uri)})
+
+
+class MfaEnableView(APIView):
+    """Confirm enrolment with a code from the app — proves the app holds the right secret."""
+
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "sensitive"
+
+    def post(self, request):
+        data = OtpSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        user = request.user
+        if not mfa.verify(user.mfa_secret, data.validated_data["code"]):
+            raise ValidationError({"code": "Неверный код. Проверьте время на телефоне."})
+        user.mfa_enabled = True
+        user.save(update_fields=["mfa_enabled"])
+        log(AuditAction.MFA_CHANGED, user, actor=user, request=request, changes={"enabled": True})
+        return Response(MeSerializer(user).data)
+
+
+class MfaDisableView(APIView):
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "sensitive"
+
+    def post(self, request):
+        data = OtpSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        user = request.user
+        if not user.mfa_enabled or not mfa.verify(user.mfa_secret, data.validated_data["code"]):
+            raise ValidationError({"code": "Неверный код."})
+        user.mfa_enabled = False
+        user.mfa_secret = ""
+        user.save(update_fields=["mfa_enabled", "mfa_secret"])
+        log(AuditAction.MFA_CHANGED, user, actor=user, request=request, changes={"enabled": False})
+        return Response(MeSerializer(user).data)

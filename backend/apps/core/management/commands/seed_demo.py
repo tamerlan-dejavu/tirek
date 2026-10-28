@@ -17,6 +17,7 @@ from apps.accounts.models import User
 from apps.buildings.models import (
     Building,
     BuildingElement,
+    BuildingType,
     Presence,
     StructuralScheme,
 )
@@ -173,6 +174,7 @@ class Command(BaseCommand):
 
         # Idempotent: missing demo requests are added, existing ones are kept as they are
         self._requests_and_polls(Building.objects.get(internal_code="ALM-0001"))
+        self._commercial(provider)
         self._maintenance_plan()
 
         self.stdout.write(
@@ -215,6 +217,105 @@ class Command(BaseCommand):
         version.published_at = timezone.now()
         version.save()
         return version
+
+    # --- commercial building (ТЗ ред. 1.1) ---------------------------------------------------
+
+    def _commercial(self, provider):
+        """A business centre with its own passport fields, classifier and draft checklist."""
+        if Building.objects.filter(internal_code="ALM-0201").exists():
+            return
+        admin = self.users[Role.PROVIDER_ADMIN]
+        customer, _ = Organization.objects.get_or_create(
+            name="Управляющая компания бизнес-центра (демо)",
+            defaults={"type": OrganizationType.CUSTOMER},
+        )
+        b = Building.objects.create(
+            internal_code="ALM-0201",
+            building_type=BuildingType.BUSINESS_CENTER,
+            name="ДЕМО · бизнес-центр",
+            address="пр. Аль-Фараби, 120",
+            year_built=2011,
+            floors=14,
+            total_area_m2="18640.00",
+            leasable_area_m2="12920.00",
+            premises=118,
+            tenants=64,
+            opening_hours="Пн–Пт 08:00–20:00, Сб 10:00–16:00",
+            structural_scheme=StructuralScheme.FRAME,
+            created_by=admin,
+        )
+        BuildingOrganizationLink.objects.create(
+            building=b, organization=provider, function=LinkFunction.TECHNICAL_SUPPORT
+        )
+        BuildingOrganizationLink.objects.create(
+            building=b, organization=customer, function=LinkFunction.CUSTOMER
+        )
+        BuildingAssignment.objects.create(building=b, user=self.users[Role.FIELD_SPECIALIST])
+        block = BuildingElement.objects.create(building=b, element_type_id="block", name="Блок А")
+        for etype, label in (
+            ("roof", "Кровля · блок А"),
+            ("facade", "Фасад · навесная система"),
+            ("hvac", "Чиллеры и центральные кондиционеры"),
+            ("smoke_control", "Система дымоудаления"),
+            ("elevators", "Пассажирские лифты, 6 шт."),
+            ("public_areas", "Лобби и эвакуационные лестницы"),
+        ):
+            BuildingElement.objects.create(
+                building=b, parent=block, element_type_id=etype, name=label
+            )
+        ensure_passport(b)
+        present = {
+            "roof",
+            "facade",
+            "hvac",
+            "smoke_control",
+            "access_control",
+            "elevators",
+            "public_areas",
+            "heating",
+            "water",
+            "sewerage",
+            "electrical",
+            "fire_safety",
+            "ventilation",
+            "low_current",
+            "parking",
+        }
+        absent = {"gas", "escalators", "attic"}
+        b.passport_entries.filter(element_type__in=present).update(presence=Presence.PRESENT)
+        b.passport_entries.filter(element_type__in=absent).update(presence=Presence.ABSENT)
+
+        template = ChecklistTemplate.objects.create(
+            organization=provider,
+            building_type=BuildingType.BUSINESS_CENTER,
+            name="Регулярный осмотр бизнес-центра (черновик)",
+        )
+        version = ChecklistTemplateVersion.objects.create(
+            template=template,
+            number=1,
+            approved_by_note="ДЕМО · шаблон-черновик, требует согласования с инженерами",
+        )
+        for i, (etype, code, text) in enumerate(
+            [
+                ("hvac", "КЛ-01", "Состояние наружных блоков и дренажа кондиционеров"),
+                ("smoke_control", "ДУ-01", "Работоспособность клапанов дымоудаления"),
+                ("public_areas", "ЭВ-01", "Эвакуационные пути свободны, знаки освещены"),
+                ("access_control", "СК-01", "Турникеты и камеры в зонах общего пользования"),
+                ("roof", "КР-01", "Состояние кровельного покрытия"),
+            ]
+        ):
+            ChecklistItem.objects.create(
+                version=version,
+                element_type_id=etype,
+                code=code,
+                text=text,
+                answer_type=AnswerType.COMPLIANCE,
+                sort_order=i,
+                photo_required_on_fail=False,
+            )
+        version.status = ChecklistTemplateVersion.Status.PUBLISHED
+        version.published_at = timezone.now()
+        version.save()
 
     # --- buildings ------------------------------------------------------------------------
 
@@ -583,7 +684,7 @@ class Command(BaseCommand):
         from apps.workorders import planning
 
         engineer = self.users[Role.REVIEWING_ENGINEER]
-        for code in ("ALM-0001", "ALM-0002"):
+        for code in ("ALM-0001", "ALM-0002", "ALM-0201"):
             b = Building.objects.get(internal_code=code)
             # Re-running is safe: existing works are not duplicated. Next year gives a full grid.
             for year in (date.today().year, date.today().year + 1):

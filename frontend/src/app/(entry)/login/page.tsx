@@ -19,6 +19,7 @@ import { homeFor } from "@/lib/permissions";
 /** Tell «wrong password» apart from «server unreachable»: they need different actions. */
 function loginErrorText(err: unknown): string {
   if (err instanceof ApiError) {
+    if (err.code === "invalid_otp") return "Неверный код из приложения.";
     if (err.status === 429) return "Слишком много попыток. Попробуйте через 15 минут.";
     if (err.code === "invalid_credentials") return "Неверный email или пароль.";
     if (err.status === 400) return "Проверьте email и пароль.";
@@ -34,6 +35,7 @@ function EmailLoginForm({ compact = false }: { compact?: boolean }) {
   const params = useSearchParams();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [needOtp, setNeedOtp] = useState(false);
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -43,10 +45,15 @@ function EmailLoginForm({ compact = false }: { compact?: boolean }) {
     try {
       const me = await api<Me>("auth/login/", {
         method: "POST",
-        body: { email: form.get("email"), password: form.get("password") },
+        body: { email: form.get("email"), password: form.get("password"), otp: form.get("otp") ?? "" },
       });
       router.replace(params.get("next") ?? homeFor(me));
     } catch (err) {
+      if (err instanceof ApiError && err.code === "mfa_required") {
+        setNeedOtp(true); // password accepted; ask for the second factor
+        return;
+      }
+      if (err instanceof ApiError && err.code === "invalid_otp") setNeedOtp(true);
       setError(loginErrorText(err));
     } finally {
       setPending(false);
@@ -72,6 +79,9 @@ function EmailLoginForm({ compact = false }: { compact?: boolean }) {
         autoComplete="current-password"
         required
       />
+      {needOtp && (
+        <Field label="Код из приложения" name="otp" inputMode="numeric" autoComplete="one-time-code" autoFocus required pattern="[0-9 ]{6,7}" />
+      )}
       {error && (
         <p role="alert" className="rounded-md bg-critical-soft px-3 py-2 text-sm text-critical-ink">
           {error}

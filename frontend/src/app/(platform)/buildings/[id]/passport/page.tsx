@@ -15,18 +15,13 @@ import { api } from "@/lib/api/client";
 import { useApi, useMe } from "@/lib/api/hooks";
 import type { Building, PassportEntry } from "@/lib/api/types";
 import { can, roles } from "@/lib/permissions";
-import { formatDate, orUnknown, PRESENCE, STRUCTURAL_SCHEME } from "@/lib/status";
+import { formatDate, orUnknown, PASSPORT_FIELD, PRESENCE, STRUCTURAL_SCHEME } from "@/lib/status";
 
-/* «Общие сведения» in the order of the passport structure */
-const GENERAL: { key: keyof Building; label: string; unit?: string; type: "text" | "number" | "scheme" }[] = [
-  { key: "address", label: "Адрес", type: "text" },
-  { key: "year_built", label: "Год строительства", type: "number" },
-  { key: "floors", label: "Количество этажей", type: "number" },
-  { key: "entrances", label: "Количество подъездов", type: "number" },
-  { key: "total_area_m2", label: "Площадь", unit: "м²", type: "number" },
-  { key: "apartments", label: "Количество квартир", type: "number" },
-  { key: "structural_scheme", label: "Конструктивная схема", type: "scheme" },
-];
+type GeneralField = { key: keyof Building; label: string; unit?: string; type: "text" | "number" | "scheme" };
+
+/* «Общие сведения» of this building type, in the order of the passport structure (ТЗ 5.3) */
+const generalOf = (b: Building): GeneralField[] =>
+  b.general_fields.map((k) => ({ key: k as keyof Building, ...PASSPORT_FIELD[k] }));
 
 const SECTIONS: { group: PassportEntry["group"]; index: string; title: string }[] = [
   { group: "structural", index: "2", title: "Конструктивные элементы" },
@@ -34,10 +29,10 @@ const SECTIONS: { group: PassportEntry["group"]; index: string; title: string }[
   { group: "operational", index: "4", title: "Эксплуатационные элементы" },
 ];
 
-function display(b: Building, f: (typeof GENERAL)[number]) {
+function display(b: Building, f: GeneralField) {
   const v = b[f.key];
   if (f.type === "scheme") return STRUCTURAL_SCHEME[String(v)] ?? orUnknown(v);
-  if (f.key === "total_area_m2" && v !== null && v !== "") {
+  if (f.unit === "м²" && v !== null && v !== "") {
     return `${Number(v).toLocaleString("ru-RU", { maximumFractionDigits: 2 })} ${f.unit}`;
   }
   return orUnknown(v, f.unit);
@@ -49,7 +44,7 @@ function GeneralForm({ b, onDone }: { b: Building; onDone: () => void }) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
     const body: Record<string, unknown> = { source: f.get("source") };
-    for (const g of GENERAL) {
+    for (const g of generalOf(b)) {
       const raw = String(f.get(g.key) ?? "").trim();
       body[g.key] = g.type === "number" ? (raw === "" ? null : raw) : raw || (g.type === "scheme" ? "unknown" : raw);
     }
@@ -64,7 +59,7 @@ function GeneralForm({ b, onDone }: { b: Building; onDone: () => void }) {
   return (
     <form onSubmit={submit} className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {GENERAL.map((g) => (
+        {generalOf(b).map((g) => (
           <label key={g.key} className="block text-sm">
             <span className="text-muted">
               {g.label}
@@ -151,7 +146,7 @@ export default function PassportPage({ params }: { params: Promise<{ id: string 
               />
             ) : (
               <dl className="grid gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-4">
-                {GENERAL.map((g) => {
+                {generalOf(b).map((g) => {
                   const src = b.field_sources[g.key as string];
                   const unknown = display(b, g) === "неизвестно";
                   return (
@@ -244,8 +239,8 @@ export default function PassportPage({ params }: { params: Promise<{ id: string 
               );
             })}
             <p className="text-xs text-faint">
-              «Неизвестно» — сведения ещё не собраны; «Нет в доме» — подтверждённое отсутствие. Заполненность паспорта учитывает
-              только известные значения. Расположение элементов по подъездам — на вкладке «Элементы и системы».
+              «Неизвестно» — сведения ещё не собраны; «Нет в здании» — подтверждённое отсутствие. Заполненность паспорта учитывает
+              только известные значения. Расположение элементов (подъезды, блоки, этажи, зоны) — на вкладке «Элементы и системы».
             </p>
           </>
         )}

@@ -2,9 +2,18 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
+from apps.accounts.models import User
+from apps.buildings.models import Building
+from apps.checklists.models import ChecklistTemplateVersion
 from apps.core import access
 from apps.core.viewsets import BuildingScopedViewSet
-from apps.organizations.models import Role
+from apps.organizations.models import (
+    BuildingAssignment,
+    LinkFunction,
+    Organization,
+    OrganizationMembership,
+    Role,
+)
 
 from . import services
 from .models import Inspection, InspectionAnswer
@@ -37,7 +46,77 @@ class InspectionViewSet(BuildingScopedViewSet):
 
     def perform_create(self, serializer):
         access.require(self.request.user, serializer.validated_data["building"].pk, *PLANNERS)
-        serializer.save(created_by=self.request.user, number=services.next_number())
+        inspection = serializer.save(created_by=self.request.user, number=services.next_number())
+        if inspection.assignee_id:
+            # A field specialist sees only assigned buildings: the inspection must reach them
+            BuildingAssignment.objects.update_or_create(
+                building=inspection.building,
+                user=inspection.assignee,
+                defaults={"is_active": True},
+            )
+
+    @action(detail=False, methods=["get"], url_path="planning-options")
+    def planning_options(self, request):
+        """UC-02 form: servicing organizations of the building, their specialists, templates."""
+        building = Building.objects.filter(
+            pk__in=access.accessible_building_ids(request.user),
+            pk=request.query_params.get("building"),
+        ).first()
+        if building is None or not access.has_role(request.user, building.pk, *PLANNERS):
+            raise PermissionDenied()
+        own = OrganizationMembership.objects.filter(
+            user=request.user, role__in=PLANNERS, is_active=True
+        ).values("organization_id")
+        orgs = Organization.objects.filter(
+            pk__in=own,
+            building_links__building=building,
+            building_links__function=LinkFunction.TECHNICAL_SUPPORT,
+            building_links__valid_to__isnull=True,
+        ).distinct()
+        versions = (
+            ChecklistTemplateVersion.objects.filter(
+                status=ChecklistTemplateVersion.Status.PUBLISHED,
+                template__organization__in=orgs,
+                template__building_type=building.building_type,
+                template__is_active=True,
+            )
+            .select_related("template")
+            .order_by("template__name", "-number")
+        )
+        return Response(
+            {
+                "building_type": building.building_type,
+                "organizations": [
+                    {
+                        "id": str(o.pk),
+                        "name": o.name,
+                        "assignees": [
+                            {"id": str(u.pk), "name": str(u), "position": u.position}
+                            for u in User.objects.filter(
+                                memberships__organization=o,
+                                memberships__role__in=[
+                                    Role.FIELD_SPECIALIST,
+                                    Role.REVIEWING_ENGINEER,
+                                ],
+                                memberships__is_active=True,
+                                is_active=True,
+                            )
+                            .distinct()
+                            .order_by("full_name")
+                        ],
+                    }
+                    for o in orgs
+                ],
+                "templates": [
+                    {
+                        "version": str(v.pk),
+                        "organization": str(v.template.organization_id),
+                        "name": f"{v.template.name} · v{v.number}",
+                    }
+                    for v in versions
+                ],
+            }
+        )
 
     def _require_assignee(self, inspection):
         if inspection.assignee_id != self.request.user.pk:
