@@ -1,5 +1,7 @@
 "use client";
 
+import { MfaCard } from "@/components/auth/MfaCard";
+import { ROLE_LABEL } from "@/components/layout/Sidebar";
 import { Button } from "@/components/ui/Button";
 import { Card, PageHeader } from "@/components/ui/Card";
 import { QueryState } from "@/components/ui/States";
@@ -25,11 +27,12 @@ export default function SettingsPage() {
               <dl className="text-sm">
                 <dt className="text-muted">Email</dt><dd className="mb-2">{u.email}</dd>
                 <dt className="text-muted">Роли</dt>
-                <dd>{u.memberships.map((m) => <div key={m.id}>{m.organization_name} · {m.role}</div>)}</dd>
+                <dd>{u.memberships.map((m) => <div key={m.id}>{m.organization_name} · {ROLE_LABEL[m.role] ?? m.role}</div>)}</dd>
               </dl>
             )}
           </QueryState>
         </Card>
+        {me.data && <MfaCard me={me.data} />}
         <Card title="Активные сессии" actions={<Button variant="secondary" onClick={() => revoke.mutate(undefined)}>Завершить остальные</Button>}>
           <QueryState query={sessions}>
             {(list) => (

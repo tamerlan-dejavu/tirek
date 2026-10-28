@@ -27,6 +27,7 @@ export interface Me {
   email: string;
   full_name: string;
   position: string;
+  mfa_enabled: boolean;
   memberships: Membership[];
 }
 
