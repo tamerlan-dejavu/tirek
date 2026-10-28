@@ -2,6 +2,7 @@
 
 import { MfaCard } from "@/components/auth/MfaCard";
 import { ROLE_LABEL } from "@/components/layout/Sidebar";
+import { ThemeCard } from "@/components/layout/ThemeToggle";
 import { Button } from "@/components/ui/Button";
 import { Card, PageHeader } from "@/components/ui/Card";
 import { QueryState } from "@/components/ui/States";
@@ -33,6 +34,7 @@ export default function SettingsPage() {
           </QueryState>
         </Card>
         {me.data && <MfaCard me={me.data} />}
+        <ThemeCard />
         <Card title="Активные сессии" actions={<Button variant="secondary" onClick={() => revoke.mutate(undefined)}>Завершить остальные</Button>}>
           <QueryState query={sessions}>
             {(list) => (

@@ -11,6 +11,7 @@ import { useApi, useMe } from "@/lib/api/hooks";
 import { isCustomerOnly } from "@/lib/permissions";
 
 import { ROLE_LABEL } from "./Sidebar";
+import { ThemeToggle } from "./ThemeToggle";
 
 const SEGMENT_LABEL: Record<string, string> = {
   dashboard: "Обзор",
@@ -138,6 +139,8 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
           <span className="hidden lg:inline">Сменить роль</span>
         </button>
       )}
+
+      <ThemeToggle />
 
       <Link
         href="/settings#notifications"
